@@ -37,6 +37,7 @@ function AppContent() {
   };
 
   if (authLoading || checkingMembers) {
+    console.log('⏳ Loading... (authLoading:', authLoading, 'checkingMembers:', checkingMembers, ')');
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-gray-400">Loading...</div>
@@ -44,8 +45,13 @@ function AppContent() {
     );
   }
 
+  console.log('👤 User:', user ? '✅ Logged in' : '❌ Not logged in');
+  console.log('👥 Has members:', hasMembers);
+
   if (!user) {
+    console.log('📍 Showing Landing page');
     return <Landing />;
+  }
   }
 
   if (hasMembers === false) {
