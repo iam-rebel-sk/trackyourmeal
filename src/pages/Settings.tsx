@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, DollarSign, Users, LogOut, Plus, Trash2, AlertCircle, Check } from 'lucide-react';
+import { Settings as SettingsIcon, DollarSign, Users, LogOut, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { supabase, Member, Settings as SettingsType } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useNotification } from '../components/Toast';
+import { useNotification, Toast } from '../components/Toast';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -262,61 +262,7 @@ export default function Settings() {
       )}
 
       {/* Toast Notifications */}
-      <div className="fixed top-6 right-6 z-40 space-y-3">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={`flex items-start gap-3 p-4 rounded-2xl backdrop-blur-lg border animate-slide-in ${
-              notification.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/30'
-                : notification.type === 'error'
-                ? 'bg-red-500/10 border-red-500/30'
-                : notification.type === 'warning'
-                ? 'bg-yellow-500/10 border-yellow-500/30'
-                : 'bg-blue-500/10 border-blue-500/30'
-            }`}
-          >
-            <div
-              className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                notification.type === 'success'
-                  ? 'bg-emerald-500 text-white'
-                  : notification.type === 'error'
-                  ? 'bg-red-500 text-white'
-                  : notification.type === 'warning'
-                  ? 'bg-yellow-500 text-white'
-                  : 'bg-blue-500 text-white'
-              }`}
-            >
-              {notification.type === 'success' && <Check className="w-3 h-3" />}
-              {notification.type === 'error' && <AlertCircle className="w-3 h-3" />}
-            </div>
-            <div className="flex-1">
-              <p
-                className={`font-semibold ${
-                  notification.type === 'success'
-                    ? 'text-emerald-300'
-                    : notification.type === 'error'
-                    ? 'text-red-300'
-                    : notification.type === 'warning'
-                    ? 'text-yellow-300'
-                    : 'text-blue-300'
-                }`}
-              >
-                {notification.title}
-              </p>
-              {notification.message && (
-                <p className="text-sm text-gray-400">{notification.message}</p>
-              )}
-            </div>
-            <button
-              onClick={() => dismiss(notification.id)}
-              className="text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-        ))}
-      </div>
+      <Toast notifications={notifications} dismiss={dismiss} />
     </div>
   );
 }

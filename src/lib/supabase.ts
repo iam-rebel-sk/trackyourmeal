@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set.');
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface Member {
@@ -29,6 +33,15 @@ export interface Settings {
   global_meal_price: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  user_id: string;
+  payment_date: string;
+  total_paid: number;
+  payment_breakdown: { [key: string]: { name: string; amount: number } };
+  description?: string;
 }
 
 export interface Archive {

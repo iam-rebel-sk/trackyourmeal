@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Check, Trash2, UtensilsCrossed, CreditCard, AlertCircle } from 'lucide-react';
-import { supabase, Member, Meal } from '../lib/supabase';
+import { supabase, Member, Meal, Payment } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import AddMealDrawer from '../components/AddMealDrawer';
 import PaymentDrawer from '../components/PaymentDrawer';
@@ -10,8 +10,8 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [currentPeriodPayments, setCurrentPeriodPayments] = useState<any[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [currentPeriodPayments, setCurrentPeriodPayments] = useState<Payment[]>([]);
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ export default function Dashboard() {
     let filteredPayments = paymentsData || [];
     if (archivesData && archivesData.length > 0) {
       const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
-      filteredPayments = filteredPayments.filter((payment: any) => {
+      filteredPayments = filteredPayments.filter((payment) => {
         const paymentTime = new Date(payment.payment_date).getTime();
         return paymentTime > mostRecentArchiveTime;
       });
@@ -115,7 +115,7 @@ export default function Dashboard() {
       let filteredPayments = payments;
       if (archivesData && archivesData.length > 0) {
         const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
-        filteredPayments = payments.filter((payment: any) => {
+        filteredPayments = payments.filter((payment) => {
           const paymentTime = new Date(payment.payment_date).getTime();
           return paymentTime > mostRecentArchiveTime;
         });
@@ -125,7 +125,7 @@ export default function Dashboard() {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
         const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
         
-        const paidAmount = filteredPayments.reduce((sum, payment: any) => {
+        const paidAmount = filteredPayments.reduce((sum, payment) => {
           const breakdown = payment.payment_breakdown || {};
           if (breakdown[member.id]) {
             return sum + Number(breakdown[member.id].amount || 0);
@@ -206,7 +206,7 @@ export default function Dashboard() {
       let filteredPayments = payments;
       if (archivesData && archivesData.length > 0) {
         const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
-        filteredPayments = payments.filter((payment: any) => {
+        filteredPayments = payments.filter((payment) => {
           const paymentTime = new Date(payment.payment_date).getTime();
           return paymentTime > mostRecentArchiveTime;
         });
@@ -217,7 +217,7 @@ export default function Dashboard() {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
         const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
         
-        const paidAmount = filteredPayments.reduce((sum, payment: any) => {
+        const paidAmount = filteredPayments.reduce((sum, payment) => {
           const breakdown = payment.payment_breakdown || {};
           if (breakdown[member.id]) {
             return sum + Number(breakdown[member.id].amount || 0);
@@ -272,7 +272,7 @@ export default function Dashboard() {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
         const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
 
-        const paidAmount = payments.reduce((sum, payment: any) => {
+        const paidAmount = payments.reduce((sum, payment) => {
           const breakdown = payment.payment_breakdown || {};
           if (breakdown[member.id]) {
             return sum + Number(breakdown[member.id].amount || 0);
@@ -364,7 +364,7 @@ export default function Dashboard() {
       const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
 
       // Use only current period payments (after most recent archive)
-      const paidAmount = currentPeriodPayments.reduce((sum, payment: any) => {
+      const paidAmount = currentPeriodPayments.reduce((sum, payment) => {
         const breakdown = payment.payment_breakdown || {};
         if (breakdown[member.id]) {
           return sum + Number(breakdown[member.id].amount || 0);

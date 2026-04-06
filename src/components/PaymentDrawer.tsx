@@ -92,13 +92,6 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
 
       if (error) throw error;
 
-      // Check if all members have paid their full remaining amount
-      const allFullyPaid = memberPayments.every((member) => {
-        const amountPaid = member.amount || 0;
-        const newRemaining = Math.max(0, member.remaining - amountPaid);
-        return newRemaining === 0 || amountPaid === 0; // Either fully paid or no payment made
-      });
-
       // Check if this payment covers all remaining amounts
       const totalRemaining = memberPayments.reduce((sum, m) => sum + m.remaining, 0);
       const totalAfterPayment = Math.max(0, totalRemaining - totalPaid);
