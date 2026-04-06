@@ -1,17 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use VITE_ prefixed env vars for Vite, falling back to standard vars
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('[v0] Missing Supabase environment variables:', { 
-    hasUrl: !!supabaseUrl, 
-    hasKey: !!supabaseAnonKey 
-  });
-}
-
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface Member {
   id: string;
