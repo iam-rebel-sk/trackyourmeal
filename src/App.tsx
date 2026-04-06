@@ -52,7 +52,6 @@ function AppContent() {
     console.log('📍 Showing Landing page');
     return <Landing />;
   }
-  }
 
   if (hasMembers === false) {
     return <MemberSetup onComplete={() => setHasMembers(true)} />;
