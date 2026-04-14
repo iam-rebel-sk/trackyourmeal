@@ -28,6 +28,11 @@ A modern, real-time meal expense tracker with payment history and archiving. Spl
 - Bottom navigation for easy access
 - Beautiful dark theme with emerald accents
 
+### ⚡ Performance
+- **Skeleton Loading** - Smooth loading placeholders on all pages
+- **Real-time Updates** - Instant data sync with Supabase
+- **Optimized Queries** - Efficient database operations
+
 ---
 
 ## 🚀 Quick Start
@@ -154,6 +159,12 @@ Uses Supabase Authentication:
 
 ## 🐛 Bug Fixes & Recent Updates
 
+### Skeleton Loading Effect (Apr 14, 2026)
+- ✅ Added smooth skeleton loading across all pages
+- ✅ Dashboard, History, Settings, and AddMealDrawer components
+- ✅ 300ms smooth transition from skeleton to actual content
+- ✅ Improved perceived performance and UX
+
 ### Archive Details White Screen Fix (Apr 6, 2026)
 - ✅ Fixed null/undefined errors when expanding archive details
 - ✅ Added Error Boundary component for graceful error handling
@@ -163,19 +174,119 @@ Uses Supabase Authentication:
 
 ## 🚀 Deployment
 
-### Deploy to Vercel
+### Deploy to Vercel (Recommended)
 
-1. Push code to GitHub
-2. Go to [vercel.com](https://vercel.com)
-3. Click "Import Project" and select your repository
-4. Add environment variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-5. Click "Deploy"
+#### Prerequisites
+- GitHub account with your repository pushed
+- Supabase project with database configured
+- Supabase credentials ready
 
-Your app will be live in 1-2 minutes!
+#### Step-by-Step Deployment
 
-**Live URL**: Your Vercel deployment URL will appear in the dashboard
+1. **Get Your Supabase Credentials**
+   - Go to [supabase.com](https://supabase.com) and login
+   - Open your project
+   - Click Settings → API (left sidebar)
+   - Copy your **Project URL** and **Anon (Public) Key**
+
+2. **Verify Build Works Locally**
+   ```bash
+   npm run build
+   npm run preview
+   ```
+
+3. **Deploy to Vercel**
+   - Visit [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Select your GitHub repository
+   - Click "Import"
+
+4. **Configure Environment Variables**
+   - In the "Environment Variables" section, add:
+     - **Name**: `VITE_SUPABASE_URL` → **Value**: `[Your Supabase URL]`
+     - **Name**: `VITE_SUPABASE_ANON_KEY` → **Value**: `[Your Supabase Key]`
+   - Click "Deploy"
+
+5. **Wait for Deployment**
+   - Vercel will build and deploy automatically (2-3 minutes)
+   - You'll get a live URL like `https://yourproject.vercel.app`
+
+#### Using Vercel CLI (Alternative)
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy
+vercel --prod
+
+# Add environment variables when prompted
+vercel env add VITE_SUPABASE_URL
+vercel env add VITE_SUPABASE_ANON_KEY
+```
+
+#### Custom Domain Setup
+1. In Vercel Dashboard, go to your project → Settings → Domains
+2. Add your custom domain
+3. Follow DNS configuration instructions
+
+#### Troubleshooting Deployment
+
+| Issue | Solution |
+|-------|----------|
+| Build fails | Run `npm run build` locally to see error details |
+| Login not working | Check environment variables in Vercel (Settings → Environment Variables) |
+| Page loads blank | Check browser console for errors (F12 → Console tab) |
+| Real-time data not syncing | Verify Supabase RLS policies are configured |
+
+**After Deployment**: Test sign up, add members, add meals, and check payment history to ensure everything works!
+
+---
+
+## ❓ FAQ & Troubleshooting
+
+### General Issues
+
+**Q: I see a blank screen after login**
+- A: Check the browser console (F12 → Console tab) for error messages
+- Try refreshing the page
+- Clear browser cache and try again
+
+**Q: Meals aren't syncing in real-time**
+- A: Verify your internet connection
+- Check that Supabase credentials are correct
+- Refresh the page manually
+
+**Q: I can't add members**
+- A: Maximum 4 members allowed per account
+- Check that member names aren't empty
+- Refresh and try again
+
+### Development Issues
+
+**Q: npm install fails**
+- A: Delete `node_modules` folder and `package-lock.json`, then run `npm install` again
+
+**Q: Build fails with TypeScript errors**
+- A: Run `npm run typecheck` to see all type errors
+- Run `npm run lint` to fix linting issues
+
+**Q: Development server won't start**
+- A: Make sure port 5174 isn't in use
+- Try: `npm run dev -- --port 5175`
+
+### Deployment Issues
+
+**Q: Environment variables not recognized after deployment**
+- A: Vercel caches might need clearing
+- Redeploy: `vercel --prod --force`
+
+**Q: Supabase connection works locally but not on Vercel**
+- A: Double-check environment variable names (should be exact)
+- Make sure anon key is public key, not secret key
 
 ---
 
