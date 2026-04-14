@@ -5,7 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import AddMealDrawer from '../components/AddMealDrawer';
 import PaymentDrawer from '../components/PaymentDrawer';
 import { useNotification, Toast } from '../components/Toast';
-import { SkeletonCard, SkeletonGrid, SkeletonMealGroup, SkeletonList } from '../components/Skeleton';
+import SuccessAnimation from '../components/SuccessAnimation';
+import { SkeletonMealGroup, SkeletonList } from '../components/Skeleton';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -16,23 +17,14 @@ export default function Dashboard() {
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => void; type: 'archive' | 'delete' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => Promise<void>; type: 'archive' | 'delete'; actionLoading?: boolean } | null>(null);
   const { notifications, notify, dismiss } = useNotification();
-  const [showSkeleton, setShowSkeleton] = useState(true);
+  const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string } | null>(null);
+  
   useEffect(() => {
-    const skeletonTimer = setTimeout(() => {
-      setShowSkeleton(false);
-    }, 300);
-
     loadData();
     subscribeToChanges();
-
-    return () => clearTimeout(skeletonTimer);
   }, [user]);
-  // useEffect(() => {
-  //   loadData();
-  //   subscribeToChanges();
-  // }, [user]);
 
   const loadData = async () => {
     if (!user) return;
@@ -70,7 +62,8 @@ export default function Dashboard() {
       const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
       filteredPayments = filteredPayments.filter((payment: any) => {
         const paymentTime = new Date(payment.payment_date).getTime();
-        return paymentTime > mostRecentArchiveTime;
+        // Only include payments made AFTER the archive (add 1ms to ensure it's after, not equal)
+        return paymentTime >= mostRecentArchiveTime + 1000; // 1 second buffer to account for processing time
       });
     }
 
@@ -128,7 +121,8 @@ export default function Dashboard() {
         const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
         filteredPayments = payments.filter((payment: any) => {
           const paymentTime = new Date(payment.payment_date).getTime();
-          return paymentTime > mostRecentArchiveTime;
+          // Only include payments made AFTER the archive (add 1 second buffer)
+          return paymentTime >= mostRecentArchiveTime + 1000;
         });
       }
 
@@ -219,7 +213,8 @@ export default function Dashboard() {
         const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
         filteredPayments = payments.filter((payment: any) => {
           const paymentTime = new Date(payment.payment_date).getTime();
-          return paymentTime > mostRecentArchiveTime;
+          // Only include payments made AFTER the archive (add 1 second buffer)
+          return paymentTime >= mostRecentArchiveTime + 1000;
         });
       }
 
@@ -324,8 +319,7 @@ export default function Dashboard() {
       }
 
       loadData();
-      setConfirmDialog(null);
-      notify('success', 'Meals Archived', 'All meals marked as paid and archived successfully!');
+      setSuccessAnimation({ show: true, message: 'All Meals Archived!' });
     } catch (err) {
       console.error('Error archiving meals:', err);
       notify('error', 'Archive Failed', 'Failed to archive meals. Please try again.');
@@ -352,18 +346,22 @@ export default function Dashboard() {
       open: true,
       title: 'Delete this meal?',
       action: async () => {
-        const { error } = await supabase
-          .from('meals')
-          .delete()
-          .eq('id', mealId);
+        try {
+          const { error } = await supabase
+            .from('meals')
+            .delete()
+            .eq('id', mealId);
 
-        if (error) {
+          if (error) {
+            notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
+          } else {
+            setSuccessAnimation({ show: true, message: 'Meal Deleted!' });
+            await loadData();
+          }
+        } catch (err) {
+          console.error('Error deleting meal:', err);
           notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
-        } else {
-          notify('success', 'Meal Deleted', 'Meal has been deleted successfully.');
-          loadData();
         }
-        setConfirmDialog(null);
       },
       type: 'delete',
     });
@@ -427,7 +425,7 @@ export default function Dashboard() {
   const totalPaid = splits.reduce((sum, split) => sum + split.paid, 0);
   const originalTotal = grandTotal + totalPaid; // Total before any payments in current period
 
-  if (showSkeleton) {
+  if (loading && meals.length === 0) {
     return (
       <div className="h-full flex flex-col">
         <div className="flex-1 overflow-y-auto pb-24 px-4 sm:px-6 pt-6 space-y-6 mx-auto w-full max-w-7xl">
@@ -690,28 +688,49 @@ export default function Dashboard() {
           <div className="flex gap-3">
             <button
               onClick={() => setConfirmDialog(null)}
-              className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all"
+              disabled={confirmDialog.actionLoading}
+              className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
-              onClick={confirmDialog.action}
-              disabled={loading}
-              className={`flex-1 py-3 px-4 rounded-2xl font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50 ${
+              onClick={async () => {
+                setConfirmDialog(prev => prev ? { ...prev, actionLoading: true } : null);
+                try {
+                  await confirmDialog.action();
+                } finally {
+                  setConfirmDialog(null);
+                }
+              }}
+              disabled={confirmDialog.actionLoading}
+              className={`flex-1 py-3 px-4 rounded-2xl font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 confirmDialog.type === 'archive'
                   ? 'bg-emerald-500 hover:bg-emerald-600'
                   : 'bg-red-500 hover:bg-red-600'
               }`}
             >
-              {confirmDialog.type === 'archive' ? (
+              {confirmDialog.actionLoading ? (
                 <>
-                  <Check className="w-4 h-4" />
-                  Archive
+                  <div className={`w-4 h-4 border-2 rounded-full animate-spin ${
+                    confirmDialog.type === 'archive'
+                      ? 'border-black/20 border-t-black'
+                      : 'border-white/20 border-t-white'
+                  }`}></div>
+                  {confirmDialog.type === 'archive' ? 'Archiving...' : 'Deleting...'}
                 </>
               ) : (
                 <>
-                  <Trash2 className="w-4 h-4" />
-                  Delete
+                  {confirmDialog.type === 'archive' ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Archive
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </>
+                  )}
                 </>
               )}
             </button>
@@ -721,6 +740,12 @@ export default function Dashboard() {
     )}
 
     <Toast notifications={notifications} dismiss={dismiss} />
+    {successAnimation?.show && (
+      <SuccessAnimation
+        message={successAnimation.message}
+        onComplete={() => setSuccessAnimation(null)}
+      />
+    )}
     </>
   );
 }

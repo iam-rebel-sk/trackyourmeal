@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { supabase, Member } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,6 +25,8 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
   const [memberPayments, setMemberPayments] = useState<MemberAmount[]>([]);
   const [loading, setLoading] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'individual' | 'combined'>('individual');
+  const [overpaymentAlert, setOverpaymentAlert] = useState<{ show: boolean; memberId: string; memberName: string; remaining: number; amount: number } | null>(null);
+  const [combinedAlert, setCombinedAlert] = useState<{ show: boolean; totalAmount: number; perMemberAmount: number; exceedingMembers: { name: string; remaining: number }[] } | null>(null);
 
   useEffect(() => {
     initializeMemberPayments();
@@ -45,6 +47,20 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
   };
 
   const updateMemberAmount = (memberId: string, amount: number) => {
+    const member = memberPayments.find((m) => m.id === memberId);
+    if (member && amount > member.remaining && amount > 0) {
+      // Show overpayment alert
+      setOverpaymentAlert({
+        show: true,
+        memberId,
+        memberName: member.name,
+        remaining: member.remaining,
+        amount: amount,
+      });
+      return;
+    }
+    
+    setOverpaymentAlert(null);
     setMemberPayments((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, amount: Math.max(0, amount) } : m))
     );
@@ -56,6 +72,31 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
     const member = memberPayments.find((m) => m.id === memberId);
     if (member) {
       updateMemberAmount(memberId, member.remaining);
+    }
+  };
+
+  const handleCorrectAmount = (correctedAmount: number) => {
+    if (overpaymentAlert && correctedAmount <= overpaymentAlert.remaining) {
+      setMemberPayments((prev) =>
+        prev.map((m) =>
+          m.id === overpaymentAlert.memberId ? { ...m, amount: correctedAmount } : m
+        )
+      );
+      setOverpaymentAlert(null);
+    }
+  };
+
+  const handleCorrectedCombinedPayment = (correctedTotal: number) => {
+    const membersWithDues = memberPayments.filter((m) => m.remaining > 0).length;
+    if (membersWithDues > 0) {
+      const perMember = correctedTotal / membersWithDues;
+      const exceedingMembers = memberPayments
+        .filter((m) => m.remaining > 0 && perMember > m.remaining);
+      
+      if (exceedingMembers.length === 0) {
+        handleCombinedPayment(perMember);
+        setCombinedAlert(null);
+      }
     }
   };
 
@@ -216,9 +257,24 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
                 placeholder="Total amount to distribute"
                 onChange={(e) => {
                   const amount = parseFloat(e.target.value) || 0;
-                  const membersWithDues = memberPayments.filter((m) => m.remaining > 0).length;
-                  if (membersWithDues > 0) {
-                    const perMember = amount / membersWithDues;
+                  const membersWithDues = memberPayments.filter((m) => m.remaining > 0);
+                  if (membersWithDues.length > 0) {
+                    const perMember = amount / membersWithDues.length;
+                    
+                    // Check for overpayment
+                    const exceedingMembers = membersWithDues.filter((m) => perMember > m.remaining);
+                    
+                    if (exceedingMembers.length > 0) {
+                      setCombinedAlert({
+                        show: true,
+                        totalAmount: amount,
+                        perMemberAmount: perMember,
+                        exceedingMembers: exceedingMembers.map(m => ({ name: m.name, remaining: m.remaining })),
+                      });
+                      return;
+                    }
+                    
+                    setCombinedAlert(null);
                     handleCombinedPayment(perMember);
                   }
                 }}
@@ -242,6 +298,125 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
             {loading ? 'Recording...' : 'Record Payment'}
           </button>
         </form>
+
+        {/* Overpayment Alert Modal */}
+        {overpaymentAlert?.show && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+            <div className="bg-neutral-900 rounded-3xl p-6 max-w-sm border border-white/10 space-y-6">
+              <div className="flex items-start gap-3">
+                <div className="bg-red-500/10 p-3 rounded-full">
+                  <AlertCircle className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Amount Exceeds Due</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {overpaymentAlert.memberName}'s current due is ₹{overpaymentAlert.remaining.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 space-y-3">
+                <p className="text-xs text-gray-400">You entered: <span className="text-red-400 font-semibold">₹{overpaymentAlert.amount.toFixed(2)}</span></p>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={overpaymentAlert.remaining}
+                    defaultValue={overpaymentAlert.remaining}
+                    id="corrected-amount"
+                    placeholder="0.00"
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setOverpaymentAlert(null)}
+                  className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const input = document.getElementById('corrected-amount') as HTMLInputElement;
+                    if (input) {
+                      handleCorrectAmount(parseFloat(input.value) || 0);
+                    }
+                  }}
+                  className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-emerald-500 text-black hover:bg-emerald-400 transition-all"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Combined Payment Overpayment Alert Modal */}
+        {combinedAlert?.show && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+            <div className="bg-neutral-900 rounded-3xl p-6 max-w-sm border border-white/10 space-y-6">
+              <div className="flex items-start gap-3">
+                <div className="bg-red-500/10 p-3 rounded-full">
+                  <AlertCircle className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Amount Too High</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Per-member share exceeds limit for:
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 space-y-3 max-h-[150px] overflow-y-auto">
+                {combinedAlert.exceedingMembers.map((member, idx) => (
+                  <div key={idx} className="text-sm">
+                    <p className="text-gray-300"><span className="font-semibold">{member.name}</span> - Due: ₹{member.remaining.toFixed(2)}</p>
+                    <p className="text-xs text-red-400">Your share: ₹{combinedAlert.perMemberAmount.toFixed(2)}</p>
+                  </div>
+                ))}
+                <div className="border-t border-red-500/30 pt-3 mt-3">
+                  <p className="text-xs text-gray-400">Total entered: <span className="text-red-400 font-semibold">₹{combinedAlert.totalAmount.toFixed(2)}</span></p>
+                  <p className="text-xs text-gray-500 mt-1">Max total allowed: ₹{(combinedAlert.exceedingMembers[0]?.remaining * (memberPayments.filter(m => m.remaining > 0).length) || 0).toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs text-gray-400">Enter corrected total:</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  id="corrected-combined"
+                  placeholder="0.00"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setCombinedAlert(null)}
+                  className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const input = document.getElementById('corrected-combined') as HTMLInputElement;
+                    if (input) {
+                      handleCorrectedCombinedPayment(parseFloat(input.value) || 0);
+                    }
+                  }}
+                  className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-emerald-500 text-black hover:bg-emerald-400 transition-all"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

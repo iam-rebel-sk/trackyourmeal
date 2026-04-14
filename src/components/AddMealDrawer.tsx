@@ -13,7 +13,7 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
   const { user } = useAuth();
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [mealDate, setMealDate] = useState(new Date().toISOString().split('T')[0]);
-  const [mealType, setMealType] = useState<'lunch' | 'dinner'>('lunch');
+  const [mealTypes, setMealTypes] = useState<('lunch' | 'dinner')[]>(['lunch']);
   const [loading, setLoading] = useState(false);
   const [priceLoading, setPriceLoading] = useState(true);
   const [price, setPrice] = useState(60);
@@ -43,30 +43,43 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
     );
   };
 
+  const toggleMealType = (type: 'lunch' | 'dinner') => {
+    setMealTypes((prev) => 
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedMembers.length === 0) {
       alert('Please select at least one member');
       return;
     }
+    if (mealTypes.length === 0) {
+      alert('Please select at least one meal type');
+      return;
+    }
 
     setLoading(true);
 
     try {
-      const mealsToAdd = selectedMembers.map((memberId) => ({
-        user_id: user!.id,
-        member_id: memberId,
-        meal_date: mealDate,
-        meal_type: mealType,
-        price_at_time: price,
-        archived: false,
-      }));
+      const mealsToAdd = selectedMembers.flatMap((memberId) =>
+        mealTypes.map((type) => ({
+          user_id: user!.id,
+          member_id: memberId,
+          meal_date: mealDate,
+          meal_type: type,
+          price_at_time: price,
+          archived: false,
+        }))
+      );
 
       const { error } = await supabase.from('meals').insert(mealsToAdd);
 
       if (error) throw error;
 
       setSelectedMembers([]);
+      setMealTypes(['lunch']);
       onSuccess();
     } catch (err) {
       console.error('Error adding meal:', err);
@@ -140,13 +153,13 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-gray-400">Meal Type</label>
+            <label className="text-sm text-gray-400">Meal Type (Select one or both)</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setMealType('lunch')}
+                onClick={() => toggleMealType('lunch')}
                 className={`py-4 px-4 rounded-2xl font-semibold transition-all ${
-                  mealType === 'lunch'
+                  mealTypes.includes('lunch')
                     ? 'bg-emerald-500 text-black'
                     : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
                 }`}
@@ -155,9 +168,9 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
               </button>
               <button
                 type="button"
-                onClick={() => setMealType('dinner')}
+                onClick={() => toggleMealType('dinner')}
                 className={`py-4 px-4 rounded-2xl font-semibold transition-all ${
-                  mealType === 'dinner'
+                  mealTypes.includes('dinner')
                     ? 'bg-emerald-500 text-black'
                     : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
                 }`}
@@ -165,6 +178,9 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
                 Dinner
               </button>
             </div>
+            {mealTypes.length > 0 && (
+              <p className="text-xs text-emerald-400">Selected: {mealTypes.join(' + ')}</p>
+            )}
           </div>
 
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
@@ -173,10 +189,10 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
 
           <button
             type="submit"
-            disabled={loading || selectedMembers.length === 0}
+            disabled={loading || selectedMembers.length === 0 || mealTypes.length === 0}
             className="w-full bg-emerald-500 text-black font-semibold py-4 px-6 rounded-2xl hover:bg-emerald-400 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Adding...' : `Add Meal${selectedMembers.length > 1 ? 's' : ''}`}
+            {loading ? 'Adding...' : `Add Meal${(selectedMembers.length * mealTypes.length) > 1 ? 's' : ''} (${selectedMembers.length * mealTypes.length} total)`}
           </button>
         </form>
         )}
