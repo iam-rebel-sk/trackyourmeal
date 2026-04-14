@@ -101,7 +101,12 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
   };
 
   const handleCombinedPayment = (amount: number) => {
-    setMemberPayments((prev) => prev.map((m) => ({ ...m, amount })));
+    setMemberPayments((prev) =>
+      prev.map((m) => ({
+        ...m,
+        amount: m.remaining > 0 ? amount : 0, // Only set amount for members with remaining dues
+      }))
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

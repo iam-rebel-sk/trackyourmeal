@@ -423,7 +423,7 @@ export default function Dashboard() {
   const splits = calculateSplits();
   const totalRemaining = splits.reduce((sum, split) => sum + split.remaining, 0);
   const totalPaid = splits.reduce((sum, split) => sum + split.paid, 0);
-  const originalTotal = grandTotal + totalPaid; // Total before any payments in current period
+  const originalTotal = grandTotal ; // Total before any payments in current period
 
   if (loading && meals.length === 0) {
     return (
