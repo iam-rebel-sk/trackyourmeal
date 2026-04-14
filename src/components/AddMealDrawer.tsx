@@ -15,6 +15,7 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
   const [mealDate, setMealDate] = useState(new Date().toISOString().split('T')[0]);
   const [mealType, setMealType] = useState<'lunch' | 'dinner'>('lunch');
   const [loading, setLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(true);
   const [price, setPrice] = useState(60);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
     if (data) {
       setPrice(Number(data.global_meal_price));
     }
+    setPriceLoading(false);
   };
 
   const toggleMember = (memberId: string) => {
@@ -87,6 +89,18 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
           </button>
         </div>
 
+        {priceLoading ? (
+          <div className="space-y-4">
+            <div className="h-6 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-40 animate-pulse" />
+            <div className="grid grid-cols-2 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-16 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+            <div className="h-4 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-32 animate-pulse" />
+            <div className="h-10 bg-gradient-to-r from-white/10 to-white/5 rounded-lg w-full animate-pulse" />
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <label className="text-sm text-gray-400">Select Members (Multiple)</label>
@@ -165,6 +179,7 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
             {loading ? 'Adding...' : `Add Meal${selectedMembers.length > 1 ? 's' : ''}`}
           </button>
         </form>
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Archive as ArchiveIcon, ChevronDown, ChevronUp, Trash2, CreditCard, Ale
 import { supabase, Archive } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../components/Toast';
+import { SkeletonList } from '../components/Skeleton';
 
 interface Payment {
   id: string;
@@ -19,6 +20,7 @@ export default function History() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'payments' | 'archives'>('payments');
   const [loading, setLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => void; type: 'delete' | 'delete-all' } | null>(null);
 
   // Helper function to get payments for a specific period (between two archives)
@@ -33,7 +35,13 @@ export default function History() {
   };
 
   useEffect(() => {
+    const skeletonTimer = setTimeout(() => {
+      setShowSkeleton(false);
+    }, 300);
+
     loadData();
+
+    return () => clearTimeout(skeletonTimer);
   }, [user]);
 
   const loadData = async () => {
@@ -100,15 +108,23 @@ export default function History() {
     });
   };
 
-  if (loading) {
+  if (showSkeleton) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="space-y-4 text-center">
-          {/* Spinner Animation */}
-          <div className="flex justify-center">
-            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+      <div className="h-full flex flex-col pb-24 px-4 sm:px-6 pt-6 mx-auto w-full max-w-7xl">
+        <div className="flex items-center gap-3 pb-6">
+          <div className="bg-emerald-500/10 p-2 rounded-xl">
+            <div className="w-5 h-5 bg-gradient-to-r from-white/10 to-white/5 rounded animate-pulse" />
           </div>
-          <p className="text-gray-400">Loading payment history...</p>
+          <div className="h-8 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-48 animate-pulse" />
+        </div>
+
+        <div className="flex gap-2 pb-6">
+          <div className="h-12 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl w-32 animate-pulse" />
+          <div className="h-12 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl w-32 animate-pulse" />
+        </div>
+
+        <div className="flex-1 space-y-3">
+          <SkeletonList count={5} />
         </div>
       </div>
     );

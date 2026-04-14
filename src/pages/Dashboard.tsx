@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AddMealDrawer from '../components/AddMealDrawer';
 import PaymentDrawer from '../components/PaymentDrawer';
 import { useNotification, Toast } from '../components/Toast';
+import { SkeletonCard, SkeletonGrid, SkeletonMealGroup, SkeletonList } from '../components/Skeleton';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -17,11 +18,21 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => void; type: 'archive' | 'delete' } | null>(null);
   const { notifications, notify, dismiss } = useNotification();
-
+  const [showSkeleton, setShowSkeleton] = useState(true);
   useEffect(() => {
+    const skeletonTimer = setTimeout(() => {
+      setShowSkeleton(false);
+    }, 300);
+
     loadData();
     subscribeToChanges();
+
+    return () => clearTimeout(skeletonTimer);
   }, [user]);
+  // useEffect(() => {
+  //   loadData();
+  //   subscribeToChanges();
+  // }, [user]);
 
   const loadData = async () => {
     if (!user) return;
@@ -416,15 +427,38 @@ export default function Dashboard() {
   const totalPaid = splits.reduce((sum, split) => sum + split.paid, 0);
   const originalTotal = grandTotal + totalPaid; // Total before any payments in current period
 
-  if (loading) {
+  if (showSkeleton) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="space-y-4 text-center">
-          {/* Spinner Animation */}
-          <div className="flex justify-center">
-            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 overflow-y-auto pb-24 px-4 sm:px-6 pt-6 space-y-6 mx-auto w-full max-w-7xl">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-500/10 p-2 rounded-xl">
+              <div className="w-5 h-5 bg-gradient-to-r from-white/10 to-white/5 rounded animate-pulse" />
+            </div>
+            <div className="h-8 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-40 animate-pulse" />
           </div>
-          <p className="text-gray-400">Loading meal tracker...</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-emerald-500/20 backdrop-blur-sm border border-white/20 rounded-3xl p-4 sm:p-6 space-y-4">
+              <div className="h-4 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-32 animate-pulse" />
+              <div className="space-y-4">
+                <div className="h-6 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-48 animate-pulse" />
+                <div className="h-6 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-40 animate-pulse" />
+                <div className="h-8 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-44 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="h-4 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-32 animate-pulse px-2" />
+            <SkeletonList count={3} />
+          </div>
+
+          <div className="space-y-6">
+            <SkeletonMealGroup />
+            <SkeletonMealGroup />
+            <SkeletonMealGroup />
+          </div>
         </div>
       </div>
     );

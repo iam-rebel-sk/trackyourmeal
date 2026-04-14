@@ -3,6 +3,7 @@ import { Settings as SettingsIcon, DollarSign, Users, LogOut, Plus, Trash2, Aler
 import { supabase, Member, Settings as SettingsType } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../components/Toast';
+import { SkeletonGrid } from '../components/Skeleton';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -11,12 +12,19 @@ export default function Settings() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [newPrice, setNewPrice] = useState('60');
   const [loading, setLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const [newMemberName, setNewMemberName] = useState('');
   const [addingMember, setAddingMember] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => void; type: 'delete' } | null>(null);
 
   useEffect(() => {
+    const skeletonTimer = setTimeout(() => {
+      setShowSkeleton(false);
+    }, 300);
+
     loadData();
+
+    return () => clearTimeout(skeletonTimer);
   }, [user]);
 
   const loadData = async () => {
@@ -126,14 +134,27 @@ export default function Settings() {
     });
   };
 
-  if (loading) {
+  if (showSkeleton) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="space-y-4 text-center">
-          <div className="flex justify-center">
-            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+      <div className="h-full overflow-y-auto pb-24 px-4 sm:px-6 pt-6 space-y-6 mx-auto w-full max-w-7xl">
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-500/10 p-2 rounded-xl">
+            <div className="w-5 h-5 bg-gradient-to-r from-white/10 to-white/5 rounded animate-pulse" />
           </div>
-          <p className="text-gray-400">Loading settings...</p>
+          <div className="h-8 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-40 animate-pulse" />
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-emerald-500/20 backdrop-blur-sm border border-white/20 rounded-3xl p-6 space-y-4">
+          <div className="h-4 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-32 animate-pulse" />
+          <div className="space-y-3">
+            <div className="h-4 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-24 animate-pulse" />
+            <div className="h-10 bg-gradient-to-r from-white/10 to-white/5 rounded-lg w-full animate-pulse" />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="h-4 bg-gradient-to-r from-white/10 to-white/5 rounded-full w-32 animate-pulse" />
+          <SkeletonGrid count={2} />
         </div>
       </div>
     );
