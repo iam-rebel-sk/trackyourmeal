@@ -63,7 +63,7 @@ export default function SuccessAnimation({ message = 'Done!', onComplete, durati
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 className="animate-checkmark-draw"
-                strokeDasharray="50"
+                strokeDasharray="100"
                 strokeDashoffset="0"
               />
             </svg>

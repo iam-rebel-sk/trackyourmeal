@@ -84,14 +84,16 @@
 
   @keyframes checkmark-draw {
     0% {
-      stroke-dasharray: 50, 50;
+      stroke-dasharray: 100, 100;
+      stroke-dashoffset: 100;
       opacity: 0;
     }
     50% {
       opacity: 1;
     }
     100% {
-      stroke-dasharray: 0, 50;
+      stroke-dasharray: 100, 100;
+      stroke-dashoffset: 0;
       opacity: 1;
     }
   }
@@ -122,7 +124,8 @@
   }
 
   .animate-checkmark-draw {
-    animation: checkmark-draw 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+    animation: checkmark-draw 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+    animation-fill-mode: forwards;
   }
 
   .animate-fade-out {
