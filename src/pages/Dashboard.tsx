@@ -7,6 +7,7 @@ import PaymentDrawer from '../components/PaymentDrawer';
 import { useNotification, Toast } from '../components/Toast';
 import SuccessAnimation from '../components/SuccessAnimation';
 import { SkeletonMealGroup, SkeletonList } from '../components/Skeleton';
+import { playSuccessSound } from '../lib/sound';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deletingMealId, setDeletingMealId] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => Promise<void>; type: 'archive' | 'delete'; actionLoading?: boolean } | null>(null);
   const { notifications, notify, dismiss } = useNotification();
   const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string } | null>(null);
@@ -319,6 +321,7 @@ export default function Dashboard() {
       }
 
       loadData();
+      playSuccessSound();
       setSuccessAnimation({ show: true, message: 'All Meals Archived!' });
     } catch (err) {
       console.error('Error archiving meals:', err);
@@ -342,29 +345,28 @@ export default function Dashboard() {
   };
 
   const handleDeleteMeal = async (mealId: string) => {
-    setConfirmDialog({
-      open: true,
-      title: 'Delete this meal?',
-      action: async () => {
-        try {
-          const { error } = await supabase
-            .from('meals')
-            .delete()
-            .eq('id', mealId);
+    setDeletingMealId(mealId);
+    try {
+      const { error } = await supabase
+        .from('meals')
+        .delete()
+        .eq('id', mealId);
 
-          if (error) {
-            notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
-          } else {
-            setSuccessAnimation({ show: true, message: 'Meal Deleted!' });
-            await loadData();
-          }
-        } catch (err) {
-          console.error('Error deleting meal:', err);
-          notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
-        }
-      },
-      type: 'delete',
-    });
+      if (error) {
+        notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
+      } else {
+        playSuccessSound();
+        setSuccessAnimation({ show: true, message: 'Meal Deleted!' });
+        // Add minimum delay to ensure loading state is visible
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await loadData();
+      }
+    } catch (err) {
+      console.error('Error deleting meal:', err);
+      notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
+    } finally {
+      setDeletingMealId(null);
+    }
   };
 
   const calculateSplits = () => {
@@ -590,10 +592,21 @@ export default function Dashboard() {
                               <p className="text-emerald-500 font-bold">₹{Number(meal.price_at_time).toFixed(2)}</p>
                               <button
                                 onClick={() => handleDeleteMeal(meal.id)}
-                                className="text-red-400 hover:text-red-300 transition-colors"
+                                disabled={deletingMealId === meal.id}
+                                className="flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Delete meal"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                {deletingMealId === meal.id ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-red-400/20 border-t-red-400 rounded-full animate-spin"></div>
+                                    <span>Deleting...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 className="w-3 h-3" />
+                                    <span>Delete</span>
+                                  </>
+                                )}
                               </button>
                             </div>
                           </div>
@@ -618,10 +631,21 @@ export default function Dashboard() {
                               <p className="text-emerald-500 font-bold">₹{Number(meal.price_at_time).toFixed(2)}</p>
                               <button
                                 onClick={() => handleDeleteMeal(meal.id)}
-                                className="text-red-400 hover:text-red-300 transition-colors"
+                                disabled={deletingMealId === meal.id}
+                                className="flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Delete meal"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                {deletingMealId === meal.id ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-red-400/20 border-t-red-400 rounded-full animate-spin"></div>
+                                    <span>Deleting...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 className="w-3 h-3" />
+                                    <span>Delete</span>
+                                  </>
+                                )}
                               </button>
                             </div>
                           </div>
@@ -656,6 +680,10 @@ export default function Dashboard() {
           onSuccess={() => {
             setShowAddMeal(false);
             loadData();
+          }}
+          onShowSuccess={(message) => {
+            playSuccessSound();
+            setSuccessAnimation({ show: true, message });
           }}
         />
       )}

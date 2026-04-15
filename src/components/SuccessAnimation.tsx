@@ -6,7 +6,7 @@ interface SuccessAnimationProps {
   duration?: number;
 }
 
-export default function SuccessAnimation({ message = 'Done!', onComplete, duration = 2500 }: SuccessAnimationProps) {
+export default function SuccessAnimation({ message = 'Done!', onComplete, duration = 2200 }: SuccessAnimationProps) {
   const [dismiss, setDismiss] = useState(false);
 
   useEffect(() => {

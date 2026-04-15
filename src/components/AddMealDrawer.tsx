@@ -7,9 +7,10 @@ interface AddMealDrawerProps {
   members: Member[];
   onClose: () => void;
   onSuccess: () => void;
+  onShowSuccess?: (message: string) => void;
 }
 
-export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDrawerProps) {
+export default function AddMealDrawer({ members, onClose, onSuccess, onShowSuccess }: AddMealDrawerProps) {
   const { user } = useAuth();
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [mealDate, setMealDate] = useState(new Date().toISOString().split('T')[0]);
@@ -78,9 +79,16 @@ export default function AddMealDrawer({ members, onClose, onSuccess }: AddMealDr
 
       if (error) throw error;
 
+      const mealCount = selectedMembers.length * mealTypes.length;
+      onShowSuccess?.(`${mealCount} Meal${mealCount > 1 ? 's' : ''} Added!`);
+      
       setSelectedMembers([]);
       setMealTypes(['lunch']);
-      onSuccess();
+      
+      // Close drawer and reload data
+      setTimeout(() => {
+        onSuccess();
+      }, 2500); // Wait for animation to complete
     } catch (err) {
       console.error('Error adding meal:', err);
       alert('Failed to add meal');
