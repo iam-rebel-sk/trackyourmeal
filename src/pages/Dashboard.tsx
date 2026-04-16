@@ -19,7 +19,8 @@ export default function Dashboard() {
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deletingMealId, setDeletingMealId] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => Promise<void>; type: 'archive' | 'delete'; actionLoading?: boolean } | null>(null);
+  const [pendingMealIdToDelete, setPendingMealIdToDelete] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; type: 'archive' | 'delete'; actionLoading?: boolean } | null>(null);
   const { notifications, notify, dismiss } = useNotification();
   const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string } | null>(null);
   
@@ -275,12 +276,12 @@ export default function Dashboard() {
 
       if (updateError) throw updateError;
 
-      // Calculate current splits to get remaining amounts for each member
+      // Calculate current splits to get remaining amounts for each member (using only current period payments)
       const currentSplits = members.map((member) => {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
         const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
 
-        const paidAmount = payments.reduce((sum, payment: any) => {
+        const paidAmount = filteredPayments.reduce((sum, payment: any) => {
           const breakdown = payment.payment_breakdown || {};
           if (breakdown[member.id]) {
             return sum + Number(breakdown[member.id].amount || 0);
@@ -335,7 +336,6 @@ export default function Dashboard() {
     setConfirmDialog({
       open: true,
       title: 'Mark all current meals as paid and archive them?',
-      action: handleMarkAsPaidConfirm,
       type: 'archive',
     });
   };
@@ -344,29 +344,13 @@ export default function Dashboard() {
     return members.find((m) => m.id === memberId)?.name || 'Unknown';
   };
 
-  const handleDeleteMeal = async (mealId: string) => {
-    setDeletingMealId(mealId);
-    try {
-      const { error } = await supabase
-        .from('meals')
-        .delete()
-        .eq('id', mealId);
-
-      if (error) {
-        notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
-      } else {
-        playSuccessSound();
-        setSuccessAnimation({ show: true, message: 'Meal Deleted!' });
-        // Add minimum delay to ensure loading state is visible
-        await new Promise(resolve => setTimeout(resolve, 500));
-        await loadData();
-      }
-    } catch (err) {
-      console.error('Error deleting meal:', err);
-      notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
-    } finally {
-      setDeletingMealId(null);
-    }
+  const handleDeleteMeal = (mealId: string) => {
+    setPendingMealIdToDelete(mealId);
+    setConfirmDialog({
+      open: true,
+      title: 'Delete this meal?',
+      type: 'delete',
+    });
   };
 
   const calculateSplits = () => {
@@ -592,7 +576,7 @@ export default function Dashboard() {
                               <p className="text-emerald-500 font-bold">₹{Number(meal.price_at_time).toFixed(2)}</p>
                               <button
                                 onClick={() => handleDeleteMeal(meal.id)}
-                                disabled={deletingMealId === meal.id}
+                                disabled={deletingMealId === meal.id || pendingMealIdToDelete === meal.id}
                                 className="flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Delete meal"
                               >
@@ -631,7 +615,7 @@ export default function Dashboard() {
                               <p className="text-emerald-500 font-bold">₹{Number(meal.price_at_time).toFixed(2)}</p>
                               <button
                                 onClick={() => handleDeleteMeal(meal.id)}
-                                disabled={deletingMealId === meal.id}
+                                disabled={deletingMealId === meal.id || pendingMealIdToDelete === meal.id}
                                 className="flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Delete meal"
                               >
@@ -715,7 +699,10 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => setConfirmDialog(null)}
+              onClick={() => {
+                setConfirmDialog(null);
+                setPendingMealIdToDelete(null);
+              }}
               disabled={confirmDialog.actionLoading}
               className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -725,16 +712,44 @@ export default function Dashboard() {
               onClick={async () => {
                 setConfirmDialog(prev => prev ? { ...prev, actionLoading: true } : null);
                 try {
-                  await confirmDialog.action();
+                  if (confirmDialog.type === 'delete') {
+                    // Handle meal deletion
+                    if (!pendingMealIdToDelete) return;
+                    
+                    const mealId = pendingMealIdToDelete;
+                    setDeletingMealId(mealId);
+                    
+                    const { error } = await supabase
+                      .from('meals')
+                      .delete()
+                      .eq('id', mealId);
+
+                    if (error) {
+                      notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
+                    } else {
+                      playSuccessSound();
+                      setSuccessAnimation({ show: true, message: 'Meal Deleted!' });
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                      await loadData();
+                    }
+                    setDeletingMealId(null);
+                  } else if (confirmDialog.type === 'archive') {
+                    // Handle mark as paid
+                    await handleMarkAsPaidConfirm();
+                  }
+                } catch (err) {
+                  console.error('Error:', err);
+                  notify('error', 'Operation Failed', 'Failed to complete operation. Please try again.');
                 } finally {
                   setConfirmDialog(null);
+                  setPendingMealIdToDelete(null);
                 }
               }}
               disabled={confirmDialog.actionLoading}
               className={`flex-1 py-3 px-4 rounded-2xl font-semibold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 confirmDialog.type === 'archive'
                   ? 'bg-emerald-500 hover:bg-emerald-600'
-                  : 'bg-red-500 hover:bg-red-600'
+                  : confirmDialog.type === 'delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-red-500 hover:bg-red-600'
               }`}
             >
               {confirmDialog.actionLoading ? (

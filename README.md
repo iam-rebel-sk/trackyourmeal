@@ -159,6 +159,18 @@ Uses Supabase Authentication:
 
 ## 🐛 Bug Fixes & Recent Updates
 
+### Payment Calculation & Deletion UX Improvements (Apr 17, 2026) ⭐ LATEST
+- ✅ **Fixed Payment History Bug**: Payment calculation was including all-time payments instead of just current period. Now correctly uses filtered payments after the most recent archive.
+- ✅ **Added Meal Deletion Confirmation**: Meals now require confirmation before deletion to prevent accidental loss of data
+- ✅ **Improved Deletion UX**: 
+  - Confirmation dialog appears before any deletion
+  - "Deleting..." loading animation shows on confirmation button
+  - Success animation and sound play after successful deletion
+  - Disabled buttons prevent double-clicks
+- ✅ **Payment History Deletions**: Payment and archive deletions now include confirmation dialogs with loading states
+- ✅ **Delete All Refinements**: Both large screen and mobile "Delete All" buttons show loading states with success feedback
+- ✅ **Consistent Feedback**: All deletions (meals, payments, archives) now include success animations and sound notifications
+
 ### Skeleton Loading Effect (Apr 14, 2026)
 - ✅ Added smooth skeleton loading across all pages
 - ✅ Dashboard, History, Settings, and AddMealDrawer components
@@ -248,12 +260,34 @@ vercel env add VITE_SUPABASE_ANON_KEY
 
 ## ❓ FAQ & Troubleshooting
 
+### Deletion Issues
+
+**Q: Why do I need to confirm when deleting meals?**
+- A: Confirmation dialogs were added to prevent accidental deletion of meals and data
+- This ensures you don't lose important meal records by mistake
+- Simply click "Cancel" if you change your mind
+
+**Q: What happens after I delete a meal?**
+- A: You'll see a loading animation while the deletion processes
+- A success animation and sound will confirm the deletion was successful
+- The meal will immediately disappear from your dashboard
+- Try to delete with confirmation and allow 1-2 seconds for processing
+
+**Q: Can I delete multiple meals at once?**
+- A: Currently, you can only delete meals one at a time with individual confirmations
+- Each deletion requires its own confirmation for safety
+
 ### General Issues
 
-**Q: I see a blank screen after login**
+**Q: Why do I see a blank screen after login**
 - A: Check the browser console (F12 → Console tab) for error messages
 - Try refreshing the page
 - Clear browser cache and try again
+
+**Q: Payment amounts show differently after "Mark as Paid"**
+- A: This has been fixed! The app now correctly calculates remaining amounts using only current period payments
+- Partial payments from the current period are properly considered
+- Each archive starts fresh without carrying over previous period data
 
 **Q: Meals aren't syncing in real-time**
 - A: Verify your internet connection
@@ -287,7 +321,22 @@ vercel env add VITE_SUPABASE_ANON_KEY
 **Q: Supabase connection works locally but not on Vercel**
 - A: Double-check environment variable names (should be exact)
 - Make sure anon key is public key, not secret key
+### 📝 Changelog
 
+**v1.2.0 (Apr 17, 2026)**
+- Fixed payment calculation bug for current period payments
+- Added confirmation dialogs for meal deletion
+- Enhanced all deletion operations with loading states and success feedback
+- Improved UX with animations and sound notifications
+- Better state management for deletion workflows
+
+**v1.1.0 (Apr 14, 2026)**
+- Added skeleton loading animations across all pages
+- Improved perceived performance with smooth transitions
+
+**v1.0.0 (Apr 6, 2026)**
+- Fixed archive details rendering errors
+- Added error boundary for graceful error handling
 ---
 
 ## 📖 How to Use

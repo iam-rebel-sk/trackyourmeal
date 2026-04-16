@@ -4,6 +4,8 @@ import { supabase, Archive } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../components/Toast';
 import { SkeletonList } from '../components/Skeleton';
+import SuccessAnimation from '../components/SuccessAnimation';
+import { playSuccessSound } from '../lib/sound';
 
 interface Payment {
   id: string;
@@ -21,7 +23,8 @@ export default function History() {
   const [activeTab, setActiveTab] = useState<'payments' | 'archives'>('payments');
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => void; type: 'delete' | 'delete-all' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => Promise<void>; type: 'delete' | 'delete-all'; actionLoading?: boolean } | null>(null);
+  const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string } | null>(null);
 
   // Helper function to get payments for a specific period (between two archives)
   const getPaymentsForPeriod = (currentArchiveDate: string, previousArchiveDate?: string): Payment[] => {
@@ -77,10 +80,12 @@ export default function History() {
         if (error) {
           notify('error', 'Delete Failed', 'Could not delete archive. Please try again.');
         } else {
-          notify('success', 'Deleted', 'Archive deleted successfully.');
+          playSuccessSound();
+          setSuccessAnimation({ show: true, message: 'Archive Deleted!' });
+          // Add minimum delay to ensure loading state is visible
+          await new Promise(resolve => setTimeout(resolve, 500));
           loadData();
         }
-        setConfirmDialog(null);
       },
       type: 'delete',
     });
@@ -99,10 +104,12 @@ export default function History() {
         if (error) {
           notify('error', 'Delete Failed', 'Could not delete payment. Please try again.');
         } else {
-          notify('success', 'Deleted', 'Payment deleted successfully.');
+          playSuccessSound();
+          setSuccessAnimation({ show: true, message: 'Payment Deleted!' });
+          // Add minimum delay to ensure loading state is visible
+          await new Promise(resolve => setTimeout(resolve, 500));
           loadData();
         }
-        setConfirmDialog(null);
       },
       type: 'delete',
     });
@@ -154,15 +161,18 @@ export default function History() {
                   for (const payment of payments) {
                     await supabase.from('payments').delete().eq('id', payment.id);
                   }
-                  notify('success', 'Deleted', 'All payment records have been deleted.');
+                  playSuccessSound();
+                  setSuccessAnimation({ show: true, message: 'All Payments Deleted!' });
+                  await new Promise(resolve => setTimeout(resolve, 500));
                 } else {
                   for (const archive of archives) {
                     await supabase.from('archives').delete().eq('id', archive.id);
                   }
-                  notify('success', 'Deleted', 'All archive records have been deleted.');
+                  playSuccessSound();
+                  setSuccessAnimation({ show: true, message: 'All Archives Deleted!' });
+                  await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 loadData();
-                setConfirmDialog(null);
               },
               type: 'delete-all',
             })}
@@ -546,15 +556,18 @@ export default function History() {
                   for (const payment of payments) {
                     await supabase.from('payments').delete().eq('id', payment.id);
                   }
-                  notify('success', 'Deleted', 'All payment records have been deleted.');
+                  playSuccessSound();
+                  setSuccessAnimation({ show: true, message: 'All Payments Deleted!' });
+                  await new Promise(resolve => setTimeout(resolve, 500));
                 } else {
                   for (const archive of archives) {
                     await supabase.from('archives').delete().eq('id', archive.id);
                   }
-                  notify('success', 'Deleted', 'All archive records have been deleted.');
+                  playSuccessSound();
+                  setSuccessAnimation({ show: true, message: 'All Archives Deleted!' });
+                  await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 loadData();
-                setConfirmDialog(null);
               },
               type: 'delete-all',
             })}
@@ -578,16 +591,34 @@ export default function History() {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDialog(null)}
-                className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all"
+                disabled={confirmDialog.actionLoading}
+                className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
-                onClick={confirmDialog.action}
-                className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-red-500 text-white hover:bg-red-600 transition-all flex items-center justify-center gap-2"
+                onClick={async () => {
+                  setConfirmDialog(prev => prev ? { ...prev, actionLoading: true } : null);
+                  try {
+                    await confirmDialog.action();
+                  } finally {
+                    setConfirmDialog(null);
+                  }
+                }}
+                disabled={confirmDialog.actionLoading}
+                className="flex-1 py-3 px-4 rounded-2xl font-semibold bg-red-500 text-white hover:bg-red-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2 className="w-4 h-4" />
-                Delete
+                {confirmDialog.actionLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -650,6 +681,12 @@ export default function History() {
           </div>
         ))}
       </div>
+      {successAnimation?.show && (
+        <SuccessAnimation
+          message={successAnimation.message}
+          onComplete={() => setSuccessAnimation(null)}
+        />
+      )}
     </div>
   );
 }
