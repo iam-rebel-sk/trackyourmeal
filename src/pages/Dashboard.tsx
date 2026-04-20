@@ -144,9 +144,9 @@ export default function Dashboard() {
         return {
           name: member.name,
           count: memberMeals.length,
-          total: mealTotal,
-          paid: paidAmount,
-          remaining: Math.max(0, mealTotal - paidAmount),
+          total: Math.round(mealTotal * 100) / 100,
+          paid: Math.round(paidAmount * 100) / 100,
+          remaining: Math.max(0, Math.round((mealTotal - paidAmount) * 100) / 100),
         };
       });
 
@@ -210,13 +210,19 @@ export default function Dashboard() {
         .order('archived_at', { ascending: false })
         .limit(1);
 
-      // Filter payments to only those from current period (after most recent archive)
-      let filteredPayments = payments;
+      // Fetch all payments and filter to only those from current period (after most recent archive)
+      const { data: allPaymentsData } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('payment_date', { ascending: false });
+
+      let filteredPayments = allPaymentsData || [];
       if (archivesData && archivesData.length > 0) {
         const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
-        filteredPayments = payments.filter((payment: any) => {
+        filteredPayments = filteredPayments.filter((payment: any) => {
           const paymentTime = new Date(payment.payment_date).getTime();
-          // Only include payments made AFTER the archive (add 1 second buffer)
+          // Only include payments made AFTER the archive (add 1 second buffer to account for processing time)
           return paymentTime >= mostRecentArchiveTime + 1000;
         });
       }
@@ -298,22 +304,24 @@ export default function Dashboard() {
         };
       });
 
+      // Build payment breakdown with remaining amounts
       const paymentBreakdown: { [key: string]: { name: string; amount: number } } = {};
       currentSplits.forEach((split) => {
         if (split.remaining > 0) {
           paymentBreakdown[split.id] = {
             name: split.name,
-            amount: split.remaining,
+            amount: Math.round(split.remaining * 100) / 100, // Ensure precise decimal handling
           };
         }
       });
 
-      const totalPayment = Object.values(paymentBreakdown).reduce((sum, item: any) => sum + item.amount, 0);
+      const totalPayment = Object.values(paymentBreakdown).reduce((sum, item: any) => sum + Number(item.amount), 0);
 
+      // Only record payment if there's an actual amount to pay
       if (totalPayment > 0) {
         const { error: paymentError } = await supabase.from('payments').insert({
           user_id: user.id,
-          total_paid: totalPayment,
+          total_paid: Math.round(totalPayment * 100) / 100, // Ensure precise decimal handling
           payment_breakdown: paymentBreakdown,
           description: 'Marked as paid - all meals archived',
         });
@@ -367,14 +375,15 @@ export default function Dashboard() {
         return sum;
       }, 0);
 
-      const remaining = Math.max(0, mealTotal - paidAmount);
+      // Ensure precise decimal handling to avoid floating point errors
+      const remaining = Math.max(0, Math.round((mealTotal - paidAmount) * 100) / 100);
 
       return {
         id: member.id,
         name: member.name,
         count: memberMeals.length,
-        total: mealTotal,
-        paid: paidAmount,
+        total: Math.round(mealTotal * 100) / 100,
+        paid: Math.round(paidAmount * 100) / 100,
         remaining,
       };
     });

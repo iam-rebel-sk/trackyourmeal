@@ -123,7 +123,7 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
         .filter((m) => m.amount > 0)
         .reduce(
           (acc, m) => {
-            acc[m.id] = { name: m.name, amount: m.amount };
+            acc[m.id] = { name: m.name, amount: Math.round(m.amount * 100) / 100 };
             return acc;
           },
           {} as { [key: string]: { name: string; amount: number } }
@@ -131,7 +131,7 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
 
       const { error } = await supabase.from('payments').insert({
         user_id: user!.id,
-        total_paid: totalPaid,
+        total_paid: Math.round(totalPaid * 100) / 100,
         payment_breakdown: breakdown,
         description: `Payment for meals`,
       });
@@ -141,13 +141,13 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
       // Check if all members have paid their full remaining amount
       const allFullyPaid = memberPayments.every((member) => {
         const amountPaid = member.amount || 0;
-        const newRemaining = Math.max(0, member.remaining - amountPaid);
+        const newRemaining = Math.max(0, Math.round((member.remaining - amountPaid) * 100) / 100);
         return newRemaining === 0 || amountPaid === 0; // Either fully paid or no payment made
       });
 
       // Check if this payment covers all remaining amounts
       const totalRemaining = memberPayments.reduce((sum, m) => sum + m.remaining, 0);
-      const totalAfterPayment = Math.max(0, totalRemaining - totalPaid);
+      const totalAfterPayment = Math.max(0, Math.round((totalRemaining - totalPaid) * 100) / 100);
 
       if (totalAfterPayment === 0 && totalPaid >= totalRemaining) {
         // Auto-archive when full payment is made

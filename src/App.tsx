@@ -56,19 +56,6 @@ function AppContent() {
     return <MemberSetup onComplete={() => setHasMembers(true)} />;
   }
 
-
-  // return (
-  //   <div className="min-h-screen bg-black text-white">
-  //     <div className="h-screen flex flex-col">
-  //       <div className="flex-1 overflow-hidden">
-  //         {activeTab === 'dashboard' && <Dashboard />}
-  //         {activeTab === 'history' && <History />}
-  //         {activeTab === 'settings' && <Settings />}
-  //       </div>
-  //       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-  //     </div>
-  //   </div>
-  // );
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="h-screen flex flex-col">
