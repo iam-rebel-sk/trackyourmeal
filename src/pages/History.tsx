@@ -409,11 +409,11 @@ export default function History() {
                                     <span className="text-yellow-300 font-semibold">₹{totalMealsAmount.toFixed(2)}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-yellow-300 text-sm">Total Paid:</span>
+                                    <span className="text-yellow-300 text-sm">Total Paid before archiving:</span>
                                     <span className="text-emerald-300 font-semibold">₹{totalPaidAmount.toFixed(2)}</span>
                                   </div>
                                   <div className="flex justify-between items-center bg-yellow-500/10 rounded p-2 border border-yellow-500/20">
-                                    <span className="text-yellow-300 text-sm font-semibold">Amount Left to Pay:</span>
+                                    <span className="text-yellow-300 text-sm font-semibold">Amount Left to Pay before archiving:</span>
                                     <span className="text-2xl font-bold text-yellow-300">₹{remainingAmount.toFixed(2)}</span>
                                   </div>
                                 </div>
@@ -483,7 +483,7 @@ export default function History() {
 
                                     {/* Amount Left to Pay */}
                                     <div className="flex justify-between items-center bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-2">
-                                      <span className="text-yellow-300 text-sm font-semibold">Amount Left to Pay:</span>
+                                      <span className="text-yellow-300 text-sm font-semibold">Amount Left to Pay before archiving:</span>
                                       <span className="text-yellow-300 font-bold">₹{Number(member.remaining || 0).toFixed(2)}</span>
                                     </div>
                                   </div>
