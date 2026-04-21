@@ -17,23 +17,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🔐 AuthProvider initializing...');
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? '✅ Loaded' : '❌ Missing');
-    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Loaded' : '❌ Missing');
+    // console.log('🔐 AuthProvider initializing...');
+    // console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? '✅ Loaded' : '❌ Missing');
+    // console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Loaded' : '❌ Missing');
     
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('📋 Session:', session ? '✅ Active' : '❌ No session');
+      // console.log('📋 Session:', session ? '✅ Active' : '❌ No session');
       setUser(session?.user ?? null);
       setLoading(false);
     }).catch(err => {
-      console.error('❌ Auth error:', err);
+      // console.error('❌ Auth error:', err);
       setLoading(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('🔄 Auth state changed:', _event);
+      // console.log('🔄 Auth state changed:', _event);
       setUser(session?.user ?? null);
     });
 

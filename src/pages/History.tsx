@@ -523,7 +523,7 @@ export default function History() {
                         </>
                       );
                     } catch (error) {
-                      console.error('Error rendering archive details:', error);
+                      // console.error('Error rendering archive details:', error);
                       return (
                         <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4">
                           <p className="text-red-400 text-sm">Error loading archive details. Please try again later.</p>

@@ -185,7 +185,7 @@ export default function Dashboard() {
 
       loadData();
     } catch (err) {
-      console.error('Error auto-archiving meals:', err);
+      // console.error('Error auto-archiving meals:', err);
       notify('error', 'Auto-Archive Failed', 'Failed to complete auto-archive. Please try again.');
     }
   };
@@ -333,7 +333,7 @@ export default function Dashboard() {
       playSuccessSound();
       setSuccessAnimation({ show: true, message: 'All Meals Archived!' });
     } catch (err) {
-      console.error('Error archiving meals:', err);
+      // console.error('Error archiving meals:', err);
       notify('error', 'Archive Failed', 'Failed to archive meals. Please try again.');
     } finally {
       setLoading(false);
@@ -747,7 +747,7 @@ export default function Dashboard() {
                     await handleMarkAsPaidConfirm();
                   }
                 } catch (err) {
-                  console.error('Error:', err);
+                  // console.error('Error:', err);
                   notify('error', 'Operation Failed', 'Failed to complete operation. Please try again.');
                 } finally {
                   setConfirmDialog(null);

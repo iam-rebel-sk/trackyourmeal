@@ -164,7 +164,7 @@ export default function PaymentDrawer({ members, splits, onClose, onSuccess, not
         onClose();
       }
     } catch (err) {
-      console.error('Error recording payment:', err);
+      // console.error('Error recording payment:', err);
       notify('error', 'Payment Failed', 'Could not record payment. Please try again.');
     } finally {
       setLoading(false);

@@ -90,7 +90,7 @@ export default function AddMealDrawer({ members, onClose, onSuccess, onShowSucce
         onSuccess();
       }, 2500); // Wait for animation to complete
     } catch (err) {
-      console.error('Error adding meal:', err);
+      // console.error('Error adding meal:', err);
       alert('Failed to add meal');
     } finally {
       setLoading(false);

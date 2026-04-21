@@ -43,6 +43,6 @@ export const playSuccessSound = () => {
     osc2.stop(now + 0.25);
   } catch (error) {
     // Silently fail if audio context is not available
-    console.debug('Audio context not available:', error);
+    // console.debug('Audio context not available:', error);
   }
 };
