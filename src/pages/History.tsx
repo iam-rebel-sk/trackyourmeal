@@ -24,7 +24,7 @@ export default function History() {
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => Promise<void>; type: 'delete' | 'delete-all'; actionLoading?: boolean } | null>(null);
-  const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string } | null>(null);
+  const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string; duration?: number } | null>(null);
 
   // Helper function to get payments for a specific period (between two archives)
   const getPaymentsForPeriod = (currentArchiveDate: string, previousArchiveDate?: string): Payment[] => {
@@ -81,7 +81,7 @@ export default function History() {
           notify('error', 'Delete Failed', 'Could not delete archive. Please try again.');
         } else {
           playSuccessSound();
-          setSuccessAnimation({ show: true, message: 'Archive Deleted!' });
+          setSuccessAnimation({ show: true, message: 'Archive Deleted!', duration: 1000 });
           // Add minimum delay to ensure loading state is visible
           await new Promise(resolve => setTimeout(resolve, 500));
           loadData();
@@ -105,7 +105,7 @@ export default function History() {
           notify('error', 'Delete Failed', 'Could not delete payment. Please try again.');
         } else {
           playSuccessSound();
-          setSuccessAnimation({ show: true, message: 'Payment Deleted!' });
+          setSuccessAnimation({ show: true, message: 'Payment Deleted!', duration: 1000 });
           // Add minimum delay to ensure loading state is visible
           await new Promise(resolve => setTimeout(resolve, 500));
           loadData();
@@ -162,14 +162,14 @@ export default function History() {
                     await supabase.from('payments').delete().eq('id', payment.id);
                   }
                   playSuccessSound();
-                  setSuccessAnimation({ show: true, message: 'All Payments Deleted!' });
+                  setSuccessAnimation({ show: true, message: 'All Payments Deleted!', duration: 1000 });
                   await new Promise(resolve => setTimeout(resolve, 500));
                 } else {
                   for (const archive of archives) {
                     await supabase.from('archives').delete().eq('id', archive.id);
                   }
                   playSuccessSound();
-                  setSuccessAnimation({ show: true, message: 'All Archives Deleted!' });
+                  setSuccessAnimation({ show: true, message: 'All Archives Deleted!', duration: 1500 });
                   await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 loadData();
@@ -231,10 +231,6 @@ export default function History() {
         ) : (
           <div className="space-y-3">
             {payments.map((payment, idx) => {
-              const cumulativeTotal = payments
-                .slice(0, idx + 1)
-                .reduce((sum, p) => sum + Number(p.total_paid), 0);
-
               return (
                 <div
                   key={payment.id}
@@ -278,11 +274,6 @@ export default function History() {
                     ))}
                   </div>
 
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2">
-                    <p className="text-xs text-emerald-400">
-                      Cumulative paid: ₹{cumulativeTotal.toFixed(2)}
-                    </p>
-                  </div>
                 </div>
               );
             })}
@@ -557,14 +548,14 @@ export default function History() {
                     await supabase.from('payments').delete().eq('id', payment.id);
                   }
                   playSuccessSound();
-                  setSuccessAnimation({ show: true, message: 'All Payments Deleted!' });
+                  setSuccessAnimation({ show: true, message: 'All Payments Deleted!', duration: 1500 });
                   await new Promise(resolve => setTimeout(resolve, 500));
                 } else {
                   for (const archive of archives) {
                     await supabase.from('archives').delete().eq('id', archive.id);
                   }
                   playSuccessSound();
-                  setSuccessAnimation({ show: true, message: 'All Archives Deleted!' });
+                  setSuccessAnimation({ show: true, message: 'All Archives Deleted!', duration: 1000 });
                   await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 loadData();
@@ -684,6 +675,7 @@ export default function History() {
       {successAnimation?.show && (
         <SuccessAnimation
           message={successAnimation.message}
+          duration={successAnimation.duration}
           onComplete={() => setSuccessAnimation(null)}
         />
       )}

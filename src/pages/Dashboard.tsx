@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [pendingMealIdToDelete, setPendingMealIdToDelete] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; type: 'archive' | 'delete'; actionLoading?: boolean } | null>(null);
   const { notifications, notify, dismiss } = useNotification();
-  const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string } | null>(null);
+  const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string; duration?: number } | null>(null);
   
   useEffect(() => {
     loadData();
@@ -737,7 +737,7 @@ export default function Dashboard() {
                       notify('error', 'Delete Failed', 'Failed to delete meal. Please try again.');
                     } else {
                       playSuccessSound();
-                      setSuccessAnimation({ show: true, message: 'Meal Deleted!' });
+                      setSuccessAnimation({ show: true, message: 'Meal Deleted!', duration: 1500 });
                       await new Promise(resolve => setTimeout(resolve, 500));
                       await loadData();
                     }
@@ -795,6 +795,7 @@ export default function Dashboard() {
     {successAnimation?.show && (
       <SuccessAnimation
         message={successAnimation.message}
+        duration={successAnimation.duration}
         onComplete={() => setSuccessAnimation(null)}
       />
     )}
