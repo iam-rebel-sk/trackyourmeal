@@ -1,438 +1,181 @@
-# 🍽️ Track Your Meal - Expense Sharing App
+# TrackYourMeal
 
-A modern, real-time meal expense tracker with payment history and archiving. Split meal costs fairly among roommates or groups with automatic payment tracking and beautiful analytics.
+TrackYourMeal is a household meal and expense tracker. A shared household
+account can record meals for multiple members, collect partial payments, see
+per-member balances, and archive completed billing periods.
 
-## ✨ Features
+## What the app does
 
-### 📊 Dashboard
-- **Add Members** - Manage who's eating (add/remove members)
-- **Track Meals** - Log lunch & dinner with automatic pricing
-- **Payment Status** - Real-time overview of who paid what
-- **Smart Calculations** - Auto-calculates remaining amounts per person
+- Email/password authentication through Supabase Auth
+- First-use household setup with 2–4 members
+- Configurable default meal price
+- Lunch and dinner entries for one or more members
+- Price snapshots on every meal, so later price changes do not alter old meals
+- Individual or equal-split combined payments
+- Overpayment protection
+- Dashboard totals for meals paid, remaining, and per-member balances
+- Payment and archive history
+- Archive snapshots containing the meals and member totals for that period
+- Confirmation dialogs and success/error feedback for destructive actions
+- Soft-deleted payment history: deleting a history item hides it from History but
+  keeps its accounting effect in Dashboard
+- Responsive dark UI with mobile bottom navigation
+- Realtime refresh for meal and payment changes
+- Skeleton loading states and an error boundary
 
-### 💳 Payment Management
-- **Record Payments** - Track who paid and how much
-- **Member Breakdown** - See contribution from each member
-- **Payment History** - Complete payment timeline
-- **Cumulative Totals** - Running total of all payments
+## Application flow
 
-### 📅 Archives & History
-- **Archive Batches** - Mark periods as complete ("Mark as Paid")
-- **Detailed Snapshots** - Full member and meal data preserved
-- **Payment History** - See what was paid before archiving
-- **Member Summary** - Track paid vs remaining amounts per member
-- **Fresh Periods** - Each archive starts a new clean period
+1. A user signs up or signs in.
+2. The app checks whether the account has members.
+3. New accounts complete household setup with 2–4 members and a default price.
+4. The Dashboard records meals and calculates each member's current balance.
+5. Payments reduce balances without changing the original meal prices.
+6. A completed period can be archived. Its snapshot is preserved in `archives`.
+7. The next period starts with active, unarchived meals and payments after the
+   latest archive boundary.
 
-### 📱 Responsive Design
-- Works on mobile, tablet, and desktop
-- Bottom navigation for easy access
-- Beautiful dark theme with emerald accents
+## Technology
 
-### ⚡ Performance
-- **Skeleton Loading** - Smooth loading placeholders on all pages
-- **Real-time Updates** - Instant data sync with Supabase
-- **Optimized Queries** - Efficient database operations
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Supabase Auth, PostgreSQL, Row Level Security, and Realtime
+- Lucide React icons
+- Vercel production deployment
+- GitHub Actions for Supabase migrations
 
----
+## Local development
 
-## 🚀 Quick Start
+### Requirements
 
-### Prerequisites
-- Node.js 16+ 
-- npm or yarn
-- Supabase account (free)
+- Node.js 18 or newer
+- npm
+- A Supabase project with the migrations applied
 
-### Installation
+### Install
 
-1. **Clone the repository**
 ```bash
 git clone https://github.com/iam-rebel-sk/trackyourmeal.git
 cd trackyourmeal
-```
-
-2. **Install dependencies**
-```bash
 npm install
 ```
 
-3. **Set up environment variables**
-Create a `.env.local` file in the root directory:
-```
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+Create `.env.local` in the project root:
+
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_public_anon_or_publishable_key
 ```
 
-Get these from your Supabase project → Settings → API
+Only the public anon/publishable key belongs in frontend environment variables.
+Never expose a Supabase service-role or secret key in this application.
 
-4. **Start development server**
+Start the app:
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:5174](http://localhost:5174) in your browser.
+Open the URL printed by Vite, usually
+`http://localhost:5173/`.
 
----
-
-## 📦 Tech Stack
-
-- **Frontend**: React 18 + TypeScript
-- **Styling**: Tailwind CSS + PostCSS
-- **Build Tool**: Vite
-- **Backend**: Supabase (PostgreSQL + Auth)
-- **Icons**: Lucide React
-- **State Management**: React Hooks + Context API
-
----
-
-## 📝 Available Scripts
+## Commands
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run typecheck    # Check TypeScript types
-npm run supabase:push # Push migrations to Supabase
+npm run dev           # Start Vite development server
+npm run build         # Create the production bundle
+npm run preview       # Preview the production bundle locally
+npm run typecheck     # Run TypeScript without emitting files
+npm run lint          # Run ESLint
+npm run supabase:push # Apply migrations with a configured Supabase CLI
 ```
 
----
+## Repository layout
 
-## 📁 Project Structure
-
-```
+```text
 src/
-├── components/          # Reusable UI components
-│   ├── AddMealDrawer.tsx
-│   ├── BottomNav.tsx
-│   ├── ErrorBoundary.tsx
-│   ├── PaymentDrawer.tsx
-│   └── Toast.tsx
-├── contexts/            # React contexts
-│   └── AuthContext.tsx
-├── lib/                 # Utilities & config
-│   └── supabase.ts
-├── pages/               # Page components
-│   ├── Dashboard.tsx
-│   ├── History.tsx
-│   ├── Landing.tsx
-│   ├── MemberSetup.tsx
-│   ├── Settings.tsx
-│   ├── SignIn.tsx
-│   └── SignUp.tsx
-├── App.tsx
-└── main.tsx
+├── App.tsx                    # Auth gate and top-level page routing
+├── components/                # Drawers, navigation, feedback, skeletons
+├── contexts/AuthContext.tsx   # Supabase session and auth operations
+├── lib/supabase.ts            # Supabase client and shared database types
+└── pages/
+    ├── Dashboard.tsx          # Meals, balances, payments, archiving
+    ├── History.tsx            # Payments and archive snapshots
+    ├── Landing.tsx            # Sign-in/sign-up entry point
+    ├── MemberSetup.tsx         # First-use household setup
+    └── Settings.tsx           # Price, members, and sign-out
+
+supabase/migrations/           # Ordered PostgreSQL schema and policy changes
+.github/workflows/             # Automatic migration deployment
+ARCHITECTURE.md                # Detailed system design
 ```
 
----
+## Database and security
 
-## 🗄️ Database Schema
+The database contains:
 
-### Members
-- Store member names and user associations
-- Link meals to members
+- `members`: household members owned by an authenticated user
+- `meals`: meal entries and immutable price snapshots
+- `settings`: one default meal price per household
+- `payments`: payment transactions and per-member JSON breakdowns
+- `archives`: immutable period snapshots
 
-### Meals
-- Track individual meal entries
-- Store meal type (lunch/dinner) and price
-- Mark meals as archived
+Every application table uses Row Level Security. Policies restrict reads and
+writes to rows whose `user_id` equals the authenticated user's ID.
 
-### Payments
-- Record payment transactions
-- Store payment breakdown by member
-- Track payment dates and amounts
+Payment deletion is intentionally a soft delete. The History page updates
+`payments.deleted_at`, while Dashboard calculations still include the payment.
+This keeps balances correct while allowing the user to hide a transaction from
+the visible history.
 
-### Archives
-- Store snapshots of meal batches
-- Preserve member stats at time of archiving
-- Keep meal details for historical reference
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full data model and flows.
 
----
+## Automatic database migrations
 
-## 🔐 Authentication
+The workflow in
+[.github/workflows/supabase-migrate.yml](./.github/workflows/supabase-migrate.yml)
+runs on changes to `supabase/` pushed to `main`. It uses the Supabase session
+pooler URL because GitHub-hosted runners may not reach a project's direct
+database endpoint.
 
-Uses Supabase Authentication:
-- Email/Password signup and login
-- Secure session management
-- Protected routes and data access
+Configure these GitHub repository secrets:
 
----
-
-## 🐛 Bug Fixes & Recent Updates
-
-### Payment Calculation & Deletion UX Improvements (Apr 17, 2026) ⭐ LATEST
-- ✅ **Fixed Payment History Bug**: Payment calculation was including all-time payments instead of just current period. Now correctly uses filtered payments after the most recent archive.
-- ✅ **Added Meal Deletion Confirmation**: Meals now require confirmation before deletion to prevent accidental loss of data
-- ✅ **Improved Deletion UX**: 
-  - Confirmation dialog appears before any deletion
-  - "Deleting..." loading animation shows on confirmation button
-  - Success animation and sound play after successful deletion
-  - Disabled buttons prevent double-clicks
-- ✅ **Payment History Deletions**: Payment and archive deletions now include confirmation dialogs with loading states
-- ✅ **Delete All Refinements**: Both large screen and mobile "Delete All" buttons show loading states with success feedback
-- ✅ **Consistent Feedback**: All deletions (meals, payments, archives) now include success animations and sound notifications
-
-### Skeleton Loading Effect (Apr 14, 2026)
-- ✅ Added smooth skeleton loading across all pages
-- ✅ Dashboard, History, Settings, and AddMealDrawer components
-- ✅ 300ms smooth transition from skeleton to actual content
-- ✅ Improved perceived performance and UX
-
-### Archive Details White Screen Fix (Apr 6, 2026)
-- ✅ Fixed null/undefined errors when expanding archive details
-- ✅ Added Error Boundary component for graceful error handling
-- ✅ Safe data access with proper fallbacks
-
----
-
-## 🚀 Deployment
-
-### Deploy to Vercel (Recommended)
-
-#### Prerequisites
-- GitHub account with your repository pushed
-- Supabase project with database configured
-- Supabase credentials ready
-
-#### Step-by-Step Deployment
-
-1. **Get Your Supabase Credentials**
-   - Go to [supabase.com](https://supabase.com) and login
-   - Open your project
-   - Click Settings → API (left sidebar)
-   - Copy your **Project URL** and **Anon (Public) Key**
-
-2. **Verify Build Works Locally**
-   ```bash
-   npm run build
-   npm run preview
-   ```
-
-3. **Deploy to Vercel**
-   - Visit [vercel.com](https://vercel.com)
-   - Click "New Project"
-   - Select your GitHub repository
-   - Click "Import"
-
-4. **Configure Environment Variables**
-   - In the "Environment Variables" section, add:
-     - **Name**: `VITE_SUPABASE_URL` → **Value**: `[Your Supabase URL]`
-     - **Name**: `VITE_SUPABASE_ANON_KEY` → **Value**: `[Your Supabase Key]`
-   - Click "Deploy"
-
-5. **Wait for Deployment**
-   - Vercel will build and deploy automatically (2-3 minutes)
-   - You'll get a live URL like `https://yourproject.vercel.app`
-
-#### Using Vercel CLI (Alternative)
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Login to Vercel
-vercel login
-
-# Deploy
-vercel --prod
-
-# Add environment variables when prompted
-vercel env add VITE_SUPABASE_URL
-vercel env add VITE_SUPABASE_ANON_KEY
+```text
+SUPABASE_ACCESS_TOKEN
+SUPABASE_DB_URL
 ```
 
-#### Custom Domain Setup
-1. In Vercel Dashboard, go to your project → Settings → Domains
-2. Add your custom domain
-3. Follow DNS configuration instructions
+`SUPABASE_DB_URL` must be the complete Supabase session-pooler URI with the
+database password included and URL-encoded when necessary. Do not commit it.
 
-#### Troubleshooting Deployment
+## Production deployment
 
-| Issue | Solution |
-|-------|----------|
-| Build fails | Run `npm run build` locally to see error details |
-| Login not working | Check environment variables in Vercel (Settings → Environment Variables) |
-| Page loads blank | Check browser console for errors (F12 → Console tab) |
-| Real-time data not syncing | Verify Supabase RLS policies are configured |
+The `main` branch is connected to Vercel. Vercel runs `npm run build` and
+publishes `dist/`.
 
-**After Deployment**: Test sign up, add members, add meals, and check payment history to ensure everything works!
+Configure these Vercel environment variables for Production, Preview, and
+Development:
 
----
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
 
-## ❓ FAQ & Troubleshooting
+After changing Vercel environment variables, redeploy so Vite embeds the new
+values in the frontend bundle.
 
-### Deletion Issues
+## Troubleshooting
 
-**Q: Why do I need to confirm when deleting meals?**
-- A: Confirmation dialogs were added to prevent accidental deletion of meals and data
-- This ensures you don't lose important meal records by mistake
-- Simply click "Cancel" if you change your mind
+| Symptom | Check |
+| --- | --- |
+| Configuration screen appears | Confirm both `VITE_` variables exist and restart Vite |
+| Login fails in production | Check Vercel variable names and environment scope |
+| Tables are missing | Check the Supabase migration workflow and its secrets |
+| Sign-up returns 429 | Wait for Supabase Auth limits or configure custom SMTP |
+| Dashboard shows old payment totals | Confirm the payment row was soft-deleted, not removed before the soft-delete migration |
+| Realtime does not refresh | Check Supabase Realtime/table publication settings |
 
-**Q: What happens after I delete a meal?**
-- A: You'll see a loading animation while the deletion processes
-- A success animation and sound will confirm the deletion was successful
-- The meal will immediately disappear from your dashboard
-- Try to delete with confirmation and allow 1-2 seconds for processing
+## License
 
-**Q: Can I delete multiple meals at once?**
-- A: Currently, you can only delete meals one at a time with individual confirmations
-- Each deletion requires its own confirmation for safety
-
-### General Issues
-
-**Q: Why do I see a blank screen after login**
-- A: Check the browser console (F12 → Console tab) for error messages
-- Try refreshing the page
-- Clear browser cache and try again
-
-**Q: Payment amounts show differently after "Mark as Paid"**
-- A: This has been fixed! The app now correctly calculates remaining amounts using only current period payments
-- Partial payments from the current period are properly considered
-- Each archive starts fresh without carrying over previous period data
-
-**Q: Meals aren't syncing in real-time**
-- A: Verify your internet connection
-- Check that Supabase credentials are correct
-- Refresh the page manually
-
-**Q: I can't add members**
-- A: Maximum 4 members allowed per account
-- Check that member names aren't empty
-- Refresh and try again
-
-### Development Issues
-
-**Q: npm install fails**
-- A: Delete `node_modules` folder and `package-lock.json`, then run `npm install` again
-
-**Q: Build fails with TypeScript errors**
-- A: Run `npm run typecheck` to see all type errors
-- Run `npm run lint` to fix linting issues
-
-**Q: Development server won't start**
-- A: Make sure port 5174 isn't in use
-- Try: `npm run dev -- --port 5175`
-
-### Deployment Issues
-
-**Q: Environment variables not recognized after deployment**
-- A: Vercel caches might need clearing
-- Redeploy: `vercel --prod --force`
-
-**Q: Supabase connection works locally but not on Vercel**
-- A: Double-check environment variable names (should be exact)
-- Make sure anon key is public key, not secret key
-### 📝 Changelog
-
-**v1.2.0 (Apr 17, 2026)**
-- Fixed payment calculation bug for current period payments
-- Added confirmation dialogs for meal deletion
-- Enhanced all deletion operations with loading states and success feedback
-- Improved UX with animations and sound notifications
-- Better state management for deletion workflows
-
-**v1.1.0 (Apr 14, 2026)**
-- Added skeleton loading animations across all pages
-- Improved perceived performance with smooth transitions
-
-**v1.0.0 (Apr 6, 2026)**
-- Fixed archive details rendering errors
-- Added error boundary for graceful error handling
----
-
-## 📖 How to Use
-
-### First Time Setup
-1. Sign up with email and password
-2. Add members who will be sharing meals
-3. Start adding meals from the Dashboard
-
-### Daily Usage
-1. **Add Meals**: Log breakfast, lunch, or dinner
-2. **Record Payments**: When someone pays, record it
-3. **View History**: Check payment details anytime
-4. **Archive**: When period ends, click "Mark as Paid" to archive
-
-### Viewing Archives
-1. Go to History tab
-2. Click Archives
-3. Expand any archive to see:
-   - Payments made during that period
-   - Member-wise breakdown
-   - Individual meal details
-   - Amount that was left to pay
-
----
-
-## 🤝 Contributing
-
-Want to improve this app? 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
----
-
-## 💡 Tips & Features
-
-- **Dark Theme**: Easier on eyes, modern aesthetic
-- **Real-time Updates**: Changes sync instantly
-- **Payment Breakdown**: See exactly who contributed what
-- **Historical Data**: Archives preserve everything for future reference
-- **Responsive**: Works great on any device
-
----
-
-## 🆘 Troubleshooting
-
-### White screen when expanding archives?
-- This has been fixed! Update to the latest version
-- Check browser console (F12) for any errors
-
-### Environment variables not loading?
-- Make sure `.env.local` is in the root directory
-- Restart the dev server after changing env vars
-- Variable names must start with `VITE_`
-
-### Supabase connection error?
-- Verify your URL and Anon Key are correct
-- Check Supabase project is active
-- Ensure RLS policies are properly configured
-
----
-
-## 📌 Roadmap
-
-- [ ] Export meal data as CSV
-- [ ] Split meal costs by type (veg/non-veg)
-- [ ] Monthly statistics and charts
-- [ ] Notification system
-- [ ] Recurring meal templates
-- [ ] Multi-group support
-
----
-
-## 👨‍💻 Developer Info
-
-**Created**: April 2026  
-**Built with**: React, TypeScript, Tailwind CSS, Supabase  
-**GitHub**: [iam-rebel-sk](https://github.com/iam-rebel-sk)
-
----
-
-## 📞 Support
-
-Need help? 
-- Check the [Troubleshooting](#-troubleshooting) section
-- Create an issue on GitHub
-- Contact via GitHub discussions
-
----
-
-**Happy tracking! 🎉** Make meal splitting easy and transparent.
+See the repository for the project's licensing terms.
