@@ -32,12 +32,15 @@ published to GitHub, add these repository secrets under **Settings → Secrets
 and variables → Actions**:
 
 - `SUPABASE_ACCESS_TOKEN`: a Supabase personal access token
-- `SUPABASE_DB_PASSWORD`: the database password for project
-  `siakkokrqqmwqqutxpmf`
+- `SUPABASE_DB_URL`: the IPv4 pooler connection string from the Supabase
+  **Connect** dialog
 
 The workflow runs on pushes to `main` that change `supabase/` and can also be
 started manually from the **Actions** tab. It applies all pending migrations,
 including the `members`, `meals`, `settings`, `archives`, and `payments` tables.
+
+Use the pooler connection string rather than the direct database host because
+GitHub-hosted runners may not be able to connect to the direct IPv6 endpoint.
 
 ### Method 2: Using Supabase Web Dashboard
 
