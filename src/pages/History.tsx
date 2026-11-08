@@ -12,6 +12,7 @@ interface Payment {
   payment_date: string;
   total_paid: number;
   payment_breakdown: { [key: string]: { name: string; amount: number } };
+  deleted_at: string | null;
 }
 
 export default function History() {
@@ -59,6 +60,7 @@ export default function History() {
       .from('payments')
       .select('*')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .order('payment_date', { ascending: false });
 
     setArchives(archivesData || []);
@@ -96,7 +98,7 @@ export default function History() {
       action: async () => {
         const { error } = await supabase
           .from('payments')
-          .delete()
+          .update({ deleted_at: new Date().toISOString() })
           .eq('id', paymentId);
 
         if (error) {
@@ -157,7 +159,10 @@ export default function History() {
               action: async () => {
                 if (activeTab === 'payments') {
                   for (const payment of payments) {
-                    await supabase.from('payments').delete().eq('id', payment.id);
+                    await supabase
+                      .from('payments')
+                      .update({ deleted_at: new Date().toISOString() })
+                      .eq('id', payment.id);
                   }
                   playSuccessSound();
                   setSuccessAnimation({ show: true, message: 'All Payments Deleted!', duration: 1000 });
@@ -543,7 +548,10 @@ export default function History() {
               action: async () => {
                 if (activeTab === 'payments') {
                   for (const payment of payments) {
-                    await supabase.from('payments').delete().eq('id', payment.id);
+                    await supabase
+                      .from('payments')
+                      .update({ deleted_at: new Date().toISOString() })
+                      .eq('id', payment.id);
                   }
                   playSuccessSound();
                   setSuccessAnimation({ show: true, message: 'All Payments Deleted!', duration: 1500 });
