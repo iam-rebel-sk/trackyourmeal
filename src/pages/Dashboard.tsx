@@ -9,12 +9,16 @@ import SuccessAnimation from '../components/SuccessAnimation';
 import { SkeletonMealGroup, SkeletonList } from '../components/Skeleton';
 import { playSuccessSound } from '../lib/sound';
 
+interface PaymentRecord {
+  payment_date: string;
+  payment_breakdown?: Record<string, { amount?: number }>;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [currentPeriodPayments, setCurrentPeriodPayments] = useState<any[]>([]);
+  const [currentPeriodPayments, setCurrentPeriodPayments] = useState<PaymentRecord[]>([]);
   const [showAddMeal, setShowAddMeal] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -26,7 +30,9 @@ export default function Dashboard() {
   
   useEffect(() => {
     loadData();
-    subscribeToChanges();
+    const cleanupSubscription = subscribeToChanges();
+
+    return cleanupSubscription;
   }, [user]);
 
   const loadData = async () => {
@@ -63,16 +69,15 @@ export default function Dashboard() {
     let filteredPayments = paymentsData || [];
     if (archivesData && archivesData.length > 0) {
       const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
-      filteredPayments = filteredPayments.filter((payment: any) => {
+      filteredPayments = filteredPayments.filter((payment: PaymentRecord) => {
         const paymentTime = new Date(payment.payment_date).getTime();
-        // Only include payments made AFTER the archive (add 1ms to ensure it's after, not equal)
-        return paymentTime >= mostRecentArchiveTime + 1000; // 1 second buffer to account for processing time
+        // Payments at or before an archive belong to the archived period.
+        return paymentTime > mostRecentArchiveTime;
       });
     }
 
     setMembers(membersData || []);
     setMeals(mealsData || []);
-    setPayments(paymentsData || []);
     setCurrentPeriodPayments(filteredPayments);
     setLoading(false);
   };
@@ -119,13 +124,23 @@ export default function Dashboard() {
         .order('archived_at', { ascending: false })
         .limit(1);
 
-      let filteredPayments = payments;
+      // The payment that triggered auto-archive may not have reached React state
+      // yet, so read payments from Supabase before creating the snapshot.
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('payment_date', { ascending: false });
+
+      if (paymentsError) throw paymentsError;
+
+      let filteredPayments = paymentsData || [];
       if (archivesData && archivesData.length > 0) {
         const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
-        filteredPayments = payments.filter((payment: any) => {
+        filteredPayments = filteredPayments.filter((payment: PaymentRecord) => {
           const paymentTime = new Date(payment.payment_date).getTime();
-          // Only include payments made AFTER the archive (add 1 second buffer)
-          return paymentTime >= mostRecentArchiveTime + 1000;
+          // Payments at or before an archive belong to the archived period.
+          return paymentTime > mostRecentArchiveTime;
         });
       }
 
@@ -133,7 +148,7 @@ export default function Dashboard() {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
         const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
         
-        const paidAmount = filteredPayments.reduce((sum, payment: any) => {
+        const paidAmount = filteredPayments.reduce((sum, payment: PaymentRecord) => {
           const breakdown = payment.payment_breakdown || {};
           if (breakdown[member.id]) {
             return sum + Number(breakdown[member.id].amount || 0);
@@ -185,7 +200,7 @@ export default function Dashboard() {
 
       loadData();
     } catch (err) {
-      // console.error('Error auto-archiving meals:', err);
+      console.error('Error auto-archiving meals:', err);
       notify('error', 'Auto-Archive Failed', 'Failed to complete auto-archive. Please try again.');
     }
   };
@@ -220,10 +235,10 @@ export default function Dashboard() {
       let filteredPayments = allPaymentsData || [];
       if (archivesData && archivesData.length > 0) {
         const mostRecentArchiveTime = new Date(archivesData[0].archived_at).getTime();
-        filteredPayments = filteredPayments.filter((payment: any) => {
+        filteredPayments = filteredPayments.filter((payment: PaymentRecord) => {
           const paymentTime = new Date(payment.payment_date).getTime();
-          // Only include payments made AFTER the archive (add 1 second buffer to account for processing time)
-          return paymentTime >= mostRecentArchiveTime + 1000;
+          // Payments at or before an archive belong to the archived period.
+          return paymentTime > mostRecentArchiveTime;
         });
       }
 
@@ -232,7 +247,7 @@ export default function Dashboard() {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
         const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
         
-        const paidAmount = filteredPayments.reduce((sum, payment: any) => {
+        const paidAmount = filteredPayments.reduce((sum, payment: PaymentRecord) => {
           const breakdown = payment.payment_breakdown || {};
           if (breakdown[member.id]) {
             return sum + Number(breakdown[member.id].amount || 0);
@@ -287,7 +302,7 @@ export default function Dashboard() {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
         const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
 
-        const paidAmount = filteredPayments.reduce((sum, payment: any) => {
+        const paidAmount = filteredPayments.reduce((sum, payment: PaymentRecord) => {
           const breakdown = payment.payment_breakdown || {};
           if (breakdown[member.id]) {
             return sum + Number(breakdown[member.id].amount || 0);
@@ -315,7 +330,7 @@ export default function Dashboard() {
         }
       });
 
-      const totalPayment = Object.values(paymentBreakdown).reduce((sum, item: any) => sum + Number(item.amount), 0);
+      const totalPayment = Object.values(paymentBreakdown).reduce((sum, item) => sum + item.amount, 0);
 
       // Only record payment if there's an actual amount to pay
       if (totalPayment > 0) {
@@ -333,7 +348,7 @@ export default function Dashboard() {
       playSuccessSound();
       setSuccessAnimation({ show: true, message: 'All Meals Archived!' });
     } catch (err) {
-      // console.error('Error archiving meals:', err);
+      console.error('Error archiving meals:', err);
       notify('error', 'Archive Failed', 'Failed to archive meals. Please try again.');
     } finally {
       setLoading(false);
@@ -367,7 +382,7 @@ export default function Dashboard() {
       const mealTotal = memberMeals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
 
       // Use only current period payments (after most recent archive)
-      const paidAmount = currentPeriodPayments.reduce((sum, payment: any) => {
+      const paidAmount = currentPeriodPayments.reduce((sum, payment: PaymentRecord) => {
         const breakdown = payment.payment_breakdown || {};
         if (breakdown[member.id]) {
           return sum + Number(breakdown[member.id].amount || 0);
@@ -747,7 +762,7 @@ export default function Dashboard() {
                     await handleMarkAsPaidConfirm();
                   }
                 } catch (err) {
-                  // console.error('Error:', err);
+                  console.error('Dashboard operation failed:', err);
                   notify('error', 'Operation Failed', 'Failed to complete operation. Please try again.');
                 } finally {
                   setConfirmDialog(null);

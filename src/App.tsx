@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { supabase } from './lib/supabase';
+import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Landing from './pages/Landing';
 import MemberSetup from './pages/MemberSetup';
 import Dashboard from './pages/Dashboard';
@@ -73,6 +73,25 @@ function AppContent() {
 }
 
 function App() {
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+        <div className="w-full max-w-lg bg-white/5 border border-emerald-500/30 rounded-3xl p-8 space-y-5">
+          <h1 className="text-2xl font-bold text-emerald-400">Supabase configuration required</h1>
+          <p className="text-gray-300">
+            Add your Supabase project URL and public anon key to a <code>.env.local</code> file
+            in the project folder, then restart the development server.
+          </p>
+          <pre className="bg-black/60 rounded-2xl p-4 text-sm text-gray-300 overflow-x-auto">{`VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_public_anon_key`}</pre>
+          <p className="text-sm text-gray-500">
+            Find both values in Supabase: Project Settings → API. Never use or share the service role key.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AuthProvider>
       <AppContent />

@@ -21,7 +21,14 @@ export default function SignIn({ onBack }: SignInProps) {
     try {
       await signIn(email, password);
     } catch (err) {
-      setError('Invalid email or password');
+      const message = err instanceof Error ? err.message.toLowerCase() : '';
+      if (message.includes('email not confirmed')) {
+        setError('Please confirm your email address before signing in.');
+      } else if (message.includes('rate limit') || message.includes('too many')) {
+        setError('Too many attempts. Please wait a few minutes and try again.');
+      } else {
+        setError('Invalid email or password. Check your credentials and try again.');
+      }
     } finally {
       setLoading(false);
     }

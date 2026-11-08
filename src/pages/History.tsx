@@ -21,7 +21,6 @@ export default function History() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'payments' | 'archives'>('payments');
-  const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; action: () => Promise<void>; type: 'delete' | 'delete-all'; actionLoading?: boolean } | null>(null);
   const [successAnimation, setSuccessAnimation] = useState<{ show: boolean; message: string; duration?: number } | null>(null);
@@ -64,7 +63,6 @@ export default function History() {
 
     setArchives(archivesData || []);
     setPayments(paymentsData || []);
-    setLoading(false);
   };
 
   const handleDeleteArchive = async (archiveId: string) => {
@@ -230,7 +228,7 @@ export default function History() {
           </div>
         ) : (
           <div className="space-y-3">
-            {payments.map((payment, idx) => {
+            {payments.map((payment) => {
               return (
                 <div
                   key={payment.id}

@@ -25,10 +25,24 @@ Or directly:
 supabase db push
 ```
 
+### Automatic GitHub deployment
+
+The repository includes `.github/workflows/supabase-migrate.yml`. After it is
+published to GitHub, add these repository secrets under **Settings → Secrets
+and variables → Actions**:
+
+- `SUPABASE_ACCESS_TOKEN`: a Supabase personal access token
+- `SUPABASE_DB_PASSWORD`: the database password for project
+  `siakkokrqqmwqqutxpmf`
+
+The workflow runs on pushes to `main` that change `supabase/` and can also be
+started manually from the **Actions** tab. It applies all pending migrations,
+including the `members`, `meals`, `settings`, `archives`, and `payments` tables.
+
 ### Method 2: Using Supabase Web Dashboard
 
 1. Go to [Supabase Console](https://app.supabase.com)
-2. Select your project (`putoiqvxeuwbiuwknohi`)
+2. Select your project (`siakkokrqqmwqqutxpmf`)
 3. Go to **SQL Editor**
 4. Click **New Query**
 5. Copy the content from `supabase/migrations/20260406_add_total_remaining_to_archives.sql`
@@ -78,7 +92,7 @@ Instead of showing ₹0.00
 
 ## 💡 Quick Reference
 
-- **Project ID:** `putoiqvxeuwbiuwknohi`
+- **Project ID:** `siakkokrqqmwqqutxpmf`
 - **Migrations Location:** `supabase/migrations/`
 - **Config File:** `supabase.json`
 
@@ -90,4 +104,3 @@ Instead of showing ₹0.00
 - Default value is 0 for existing archives
 - New archives will be created with the correct `total_remaining` value
 - The field is optional in TypeScript (`total_remaining?: number`)
-

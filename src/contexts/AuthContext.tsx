@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
     }).catch(err => {
-      // console.error('❌ Auth error:', err);
+      console.error('Auth error:', err);
       setLoading(false);
     });
 

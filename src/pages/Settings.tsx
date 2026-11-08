@@ -11,7 +11,6 @@ export default function Settings() {
   const [members, setMembers] = useState<Member[]>([]);
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [newPrice, setNewPrice] = useState('60');
-  const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(true);
   const [newMemberName, setNewMemberName] = useState('');
   const [addingMember, setAddingMember] = useState(false);
@@ -45,7 +44,6 @@ export default function Settings() {
     setMembers(membersData || []);
     setSettings(settingsData);
     setNewPrice(settingsData?.global_meal_price?.toString() || '60');
-    setLoading(false);
   };
 
   const handleUpdatePrice = async () => {
