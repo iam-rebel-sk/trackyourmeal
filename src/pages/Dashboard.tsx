@@ -276,27 +276,6 @@ export default function Dashboard() {
 
       const grandTotal = meals.reduce((sum, m) => sum + Number(m.price_at_time), 0);
 
-      const { error: archiveError } = await supabase.from('archives').insert({
-        user_id: user.id,
-        total_amount: grandTotal,
-        meal_count: meals.length,
-        snapshot_data: {
-          members: memberStats,
-          meals: mealSnapshot,
-        },
-        price_at_archive: settings?.global_meal_price || 60,
-      });
-
-      if (archiveError) throw archiveError;
-
-      const mealIds = meals.map((m) => m.id);
-      const { error: updateError } = await supabase
-        .from('meals')
-        .update({ archived: true })
-        .in('id', mealIds);
-
-      if (updateError) throw updateError;
-
       // Calculate current splits to get remaining amounts for each member (using only current period payments)
       const currentSplits = members.map((member) => {
         const memberMeals = meals.filter((m) => m.member_id === member.id);
@@ -343,6 +322,29 @@ export default function Dashboard() {
 
         if (paymentError) throw paymentError;
       }
+
+      // Record the archive after the settlement payment so that payment belongs
+      // to the archived period and is excluded from the next period.
+      const { error: archiveError } = await supabase.from('archives').insert({
+        user_id: user.id,
+        total_amount: grandTotal,
+        meal_count: meals.length,
+        snapshot_data: {
+          members: memberStats,
+          meals: mealSnapshot,
+        },
+        price_at_archive: settings?.global_meal_price || 60,
+      });
+
+      if (archiveError) throw archiveError;
+
+      const mealIds = meals.map((m) => m.id);
+      const { error: updateError } = await supabase
+        .from('meals')
+        .update({ archived: true })
+        .in('id', mealIds);
+
+      if (updateError) throw updateError;
 
       loadData();
       playSuccessSound();
